@@ -16,7 +16,6 @@ local.properties
 .claude/
 /docs/superpowers/
 **/CLAUDE.md
-**/AGENTS.md
 
 # Sibling clones of upstream projects used as references during development
 /termux-api/
