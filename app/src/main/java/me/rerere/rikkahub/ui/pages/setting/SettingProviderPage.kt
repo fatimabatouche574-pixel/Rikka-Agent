@@ -4,6 +4,7 @@ import android.net.Uri
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderRequirement
 import me.rerere.hugeicons.stroke.Camera01
+import me.rerere.hugeicons.stroke.Library
 import me.rerere.hugeicons.stroke.DragDropHorizontal
 import me.rerere.hugeicons.stroke.Image02
 import me.rerere.hugeicons.stroke.FileImport
@@ -127,6 +128,14 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 actions = {
+                    IconButton(
+                        onClick = { navController.navigate(Screen.CatalogBrowser) }
+                    ) {
+                        Icon(
+                            imageVector = HugeIcons.Library,
+                            contentDescription = stringResource(R.string.setting_provider_page_catalog)
+                        )
+                    }
                     RecommendProviderButton { provider ->
                         vm.updateSettings(
                             settings.copy(

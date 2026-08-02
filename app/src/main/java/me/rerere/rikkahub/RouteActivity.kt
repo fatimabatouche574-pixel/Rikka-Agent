@@ -107,6 +107,7 @@ import me.rerere.rikkahub.ui.pages.log.LogPage
 import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAccessibilityPage
+import me.rerere.rikkahub.ui.pages.setting.SettingCatalogPage
 import me.rerere.rikkahub.ui.pages.setting.SettingNotificationsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPermissionsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
@@ -452,6 +453,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingProviderPage()
                             }
 
+                            entry<Screen.CatalogBrowser> {
+                                SettingCatalogPage()
+                            }
+
                             entry<Screen.SettingProviderDetail> { key ->
                                 val id = Uuid.parse(key.providerId)
                                 SettingProviderDetailPage(id = id)
@@ -730,6 +735,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data class SettingProviderDetail(val providerId: String) : Screen
+
+    @Serializable
+    data object CatalogBrowser : Screen
 
     @Serializable
     data object SettingModels : Screen

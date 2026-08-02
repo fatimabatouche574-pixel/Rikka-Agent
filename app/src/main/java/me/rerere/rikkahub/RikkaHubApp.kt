@@ -25,12 +25,14 @@ import kotlinx.coroutines.flow.first
 import me.rerere.common.android.appTempFolder
 import com.whl.quickjs.android.QuickJSLoader
 import me.rerere.rikkahub.di.appModule
+import me.rerere.rikkahub.di.catalogModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.ai.tools.HeadlessConversations
+import me.rerere.rikkahub.data.ai.models.ModelCatalogService
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.DatabaseUtil
@@ -55,7 +57,7 @@ class RikkaHubApp : Application() {
             androidLogger()
             androidContext(this@RikkaHubApp)
             workManagerFactory()
-            modules(appModule, viewModelModule, dataSourceModule, repositoryModule)
+            modules(appModule, viewModelModule, dataSourceModule, repositoryModule, catalogModule)
         }
         this.createNotificationChannel()
 
@@ -132,6 +134,17 @@ class RikkaHubApp : Application() {
         // OkHttp's idle sockets keep the failure sticky after return. Eviction on the
         // next onAvailable forces a fresh DNS lookup + new socket on the next request.
         startNetworkChangeMonitor()
+
+        // Fire-and-forget catalog warm-up: load the best-available catalog snapshot
+        // (downloaded > bundled) off the main thread and publish it via flows. Never
+        // blocks app start; a failure just leaves the catalog empty until the page loads.
+        get<AppScope>().launch(Dispatchers.IO) {
+            runCatching {
+                get<ModelCatalogService>().warmUp()
+            }.onFailure {
+                Log.w(TAG, "catalog warmUp failed", it)
+            }
+        }
 
         // Phase 24 — unified AgentRun ledger boot recovery. Walk the ledger once per
         // process start: any autonomous run (cron / workflow / sub-agent / Telegram /
