@@ -134,6 +134,104 @@ class ModelCatalogTest {
     }
 
     @Test
+    fun `US4 - alias resolves through exact entries to one canonical model`() {
+        val raw = """
+            {
+              "schema_version": 2,
+              "providers": [],
+              "models": [{
+                "id": "gpt-5",
+                "canonical_model_id": "gpt-5",
+                "api_aliases": ["gpt5", "openai/gpt-5"],
+                "type": "chat",
+                "abilities": ["tool", "reasoning"]
+              }]
+            }
+        """.trimIndent()
+        val snapshot = ModelCatalogParser.parse(raw)
+
+        // All alias spellings map to the SAME entry via the exact-entry map (FR-011).
+        val canonical = snapshot.exactEntryOrNull("gpt-5")
+        val alias = snapshot.exactEntryOrNull("gpt5")
+        val prefixed = snapshot.exactEntryOrNull("openai/gpt-5")
+        assertNotNull(canonical)
+        assertNotNull(alias)
+        assertNotNull(prefixed)
+        assertEquals("gpt-5", canonical!!.canonicalModelId)
+        assertEquals(canonical.canonicalModelId, alias!!.canonicalModelId)
+        assertEquals(canonical.canonicalModelId, prefixed!!.canonicalModelId)
+        assertTrue(canonical.supportsFunctionCalling)
+        assertTrue(canonical.supportsReasoning)
+
+        // Layered resolution also reaches a single canonical entry for an alias id.
+        val resolved = snapshot.resolveModelEntry("gpt5")
+        assertNotNull(resolved)
+        assertEquals("gpt-5", resolved!!.canonicalModelId)
+        assertEquals(canonical.supportsFunctionCalling, resolved.supportsFunctionCalling)
+    }
+
+    @Test
+    fun `US4 - resolveModelEntry honors provider hints for aliased overrides`() {
+        val raw = """
+            {
+              "schema_version": 2,
+              "providers": [],
+              "model_families": [],
+              "global_rules": [],
+              "model_overrides": [{
+                "id": "acme-model",
+                "canonical_model_id": "acme-model",
+                "api_aliases": ["acme", "acme/api"],
+                "provider_ids": ["d5734028-d39b-4d41-9841-fd648d65440e"],
+                "type": "chat",
+                "abilities": ["tool", "reasoning"]
+              }]
+            }
+        """.trimIndent()
+        val snapshot = ModelCatalogParser.parse(raw)
+
+        // Bound to the configured provider id → resolves.
+        val bound = snapshot.resolveModelEntry(
+            modelId = "acme/api",
+            providerHint = ProviderSetting.OpenAI(
+                id = Uuid.parse("d5734028-d39b-4d41-9841-fd648d65440e"),
+                baseUrl = "https://acme.example.com/v1",
+            ),
+        )
+        assertNotNull(bound)
+        assertEquals("acme-model", bound!!.canonicalModelId)
+
+        // Without a matching provider the provider-gated override is skipped (null, not a
+        // duplicate guess) — callers fall through to safe defaults.
+        val unbound = snapshot.resolveModelEntry(
+            modelId = "acme/api",
+            providerHint = ProviderSetting.OpenAI(baseUrl = "https://other.example.com/v1"),
+        )
+        assertNull(unbound)
+    }
+
+    @Test
+    fun `US4 - exactEntries removes ambiguous canonical ids but keeps distinct aliases`() {
+        val raw = """
+            {
+              "schema_version": 2,
+              "providers": [],
+              "model_overrides": [
+                { "id": "gpt-5", "canonical_model_id": "gpt-5", "api_aliases": ["gpt5"], "type": "chat" },
+                { "id": "gpt-5-pro", "canonical_model_id": "gpt-5", "api_aliases": [], "type": "chat" }
+              ]
+            }
+        """.trimIndent()
+        val snapshot = ModelCatalogParser.parse(raw)
+        // Ambiguous canonical "gpt-5" is removed from exactEntries (FR-011).
+        assertNull(snapshot.exactEntryOrNull("gpt-5"))
+        // Distinct alias keys still resolve to a single candidate each.
+        assertNotNull(snapshot.exactEntryOrNull("gpt5"))
+        assertNotNull(snapshot.exactEntryOrNull("gpt-5-pro"))
+        assertEquals(2, snapshot.canonicalEntries["gpt-5"]?.size)
+    }
+
+    @Test
     fun `parse - stt type resolves as chat safe default`() {
         val raw = """
             {

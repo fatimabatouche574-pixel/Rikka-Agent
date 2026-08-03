@@ -43,6 +43,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -533,6 +534,8 @@ private fun ModelSettingsForm(
 ) {
     val pagerState = rememberPagerState { 3 }
     val scope = rememberCoroutineScope()
+    val catalogResolver = koinInject<ModelMetadataResolver>()
+    var showAddAliasDialog by remember { mutableStateOf(false) }
 
     fun setModelId(id: String) {
         val inputModality = ModelRegistry.MODEL_INPUT_MODALITIES.getData(id)
@@ -655,6 +658,55 @@ private fun ModelSettingsForm(
                                 }
                             )
                         }
+
+                        // US4 — per-model override of auto-detected capabilities (FR-007).
+                        // These controls edit the single model directly and persist via the
+                        // existing `editModel` + `PreferencesStore.update` path (FR-016).
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        Text(
+                            text = stringResource(R.string.setting_provider_page_override),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = stringResource(R.string.setting_provider_page_override_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    onModelChange(
+                                        model.copy(
+                                            type = ModelType.CHAT,
+                                            inputModalities = listOf(Modality.TEXT),
+                                            outputModalities = listOf(Modality.TEXT),
+                                            abilities = emptyList(),
+                                        ),
+                                    )
+                                },
+                            ) {
+                                Text(stringResource(R.string.setting_provider_page_use_defaults))
+                            }
+                            TextButton(
+                                onClick = {
+                                    onModelChange(
+                                        model.enrichCapabilities(catalogResolver, parentProvider),
+                                    )
+                                },
+                            ) {
+                                Text(stringResource(R.string.setting_provider_page_reset_to_auto_detected))
+                            }
+                        }
+                        TextButton(
+                            onClick = { showAddAliasDialog = true },
+                        ) {
+                            Icon(HugeIcons.Add01, contentDescription = null)
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Text(stringResource(R.string.setting_provider_page_add_alias))
+                        }
                     }
                 }
 
@@ -702,6 +754,48 @@ private fun ModelSettingsForm(
                 }
             }
         }
+    }
+
+    // US4 — add a model ID alias. The alias is resolved through the catalog snapshot to the
+    // single canonical model (FR-011), so an aliased id never creates a duplicate entry. The
+    // model keeps the alias as its API id; the resolver honors it at use time.
+    if (showAddAliasDialog) {
+        var aliasId by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showAddAliasDialog = false },
+            title = {
+                Text(stringResource(R.string.setting_provider_page_add_alias))
+            },
+            text = {
+                OutlinedTextField(
+                    value = aliasId,
+                    onValueChange = { aliasId = it },
+                    label = { Text(stringResource(R.string.setting_provider_page_model_id_placeholder)) },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val alias = aliasId.trim()
+                        if (alias.isNotBlank()) {
+                            onModelChange(
+                                Model(modelId = alias, displayName = alias)
+                                    .enrichCapabilities(catalogResolver, parentProvider),
+                            )
+                        }
+                        showAddAliasDialog = false
+                    },
+                ) {
+                    Text(stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddAliasDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 

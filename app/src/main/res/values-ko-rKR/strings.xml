@@ -942,6 +942,11 @@ mDNS 주소: .local 호스트네임을 사용하며, IP를 몰라도 같은 네�
   <string name="setting_provider_page_defaults_applied">기본값 적용됨</string>
   <string name="setting_provider_page_use_service_account">서비스 계정 사용</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">재정의</string>
+  <string name="setting_provider_page_override_desc">이 모델의 자동 감지된 카탈로그 메타데이터를 재정의합니다. 수정 사항이 카탈로그 업데이트보다 우선합니다.</string>
+  <string name="setting_provider_page_use_defaults">기본값 사용</string>
+  <string name="setting_provider_page_reset_to_auto_detected">자동 감지로 재설정</string>
+  <string name="setting_provider_page_add_alias">별칭 추가</string>
 
   <string name="setting_catalog_page_title">카탈로그</string>
   <string name="setting_catalog_page_search_placeholder">프로바이더 검색…</string>

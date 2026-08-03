@@ -934,6 +934,11 @@
   <string name="setting_provider_page_tool_use">استخدام الأدوات</string>
   <string name="setting_provider_page_defaults_applied">تم تطبيق القيم الافتراضية</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">تجاوز</string>
+  <string name="setting_provider_page_override_desc">تجاوز بيانات الكتالوج المكتشفة تلقائيًا لهذا النموذج. تصحيحاتك لها الأولوية على تحديثات الكتالوج.</string>
+  <string name="setting_provider_page_use_defaults">استخدام الافتراضيات</string>
+  <string name="setting_provider_page_reset_to_auto_detected">إعادة تعيين إلى الكشف التلقائي</string>
+  <string name="setting_provider_page_add_alias">إضافة اسم مستعار</string>
 
   <string name="setting_catalog_page_title">الكتالوج</string>
   <string name="setting_catalog_page_search_placeholder">ابحث عن المزودين…</string>

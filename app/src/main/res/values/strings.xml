@@ -994,6 +994,11 @@
   <string name="setting_provider_page_defaults_applied">Defaults applied</string>
   <string name="setting_provider_page_use_service_account">Use Service Account</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">Override</string>
+  <string name="setting_provider_page_override_desc">Override the auto-detected catalog metadata for this model. Your corrections win over catalog updates.</string>
+  <string name="setting_provider_page_use_defaults">Use defaults</string>
+  <string name="setting_provider_page_reset_to_auto_detected">Reset to auto-detected</string>
+  <string name="setting_provider_page_add_alias">Add alias</string>
   <string name="setting_catalog_page_title">Catalog</string>
   <string name="setting_catalog_page_search_placeholder">Search providers…</string>
   <string name="setting_catalog_page_add_provider">Add provider</string>

@@ -940,6 +940,11 @@
   <string name="setting_provider_page_defaults_applied">已套用預設值</string>
   <string name="setting_provider_page_use_service_account">使用服務帳號</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">覆寫</string>
+  <string name="setting_provider_page_override_desc">覆寫此模型的自動偵測目錄中繼資料。你的修正優先於目錄更新。</string>
+  <string name="setting_provider_page_use_defaults">使用預設值</string>
+  <string name="setting_provider_page_reset_to_auto_detected">重設為自動偵測</string>
+  <string name="setting_provider_page_add_alias">新增別名</string>
 
   <string name="setting_catalog_page_title">模型目錄</string>
   <string name="setting_catalog_page_search_placeholder">搜尋提供商…</string>

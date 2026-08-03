@@ -129,14 +129,14 @@
 
 ### Tests for User Story 4 (write FIRST, must FAIL) ⚠️
 
-- [ ] T035 [P] [US4] Extend `ModelMetadataResolverTest.kt` + `CatalogSettingsMergerTest.kt`: user-corrected `Model` fields (non-default type, image input, tool/reasoning ability) survive `applyToModel`/`applyToProvider`/`mergeCatalogIntoSettings` re-runs (preserve flags + merger non-destructive rule); unknown model → safe-default fallback; alias → single canonical resolution, no duplicate configured entries
+- [X] T035 [P] [US4] Extend `ModelMetadataResolverTest.kt` + `CatalogSettingsMergerTest.kt`: user-corrected `Model` fields (non-default type, image input, tool/reasoning ability) survive `applyToModel`/`applyToProvider`/`mergeCatalogIntoSettings` re-runs (preserve flags + merger non-destructive rule); unknown model → safe-default fallback; alias → single canonical resolution, no duplicate configured entries
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] Wire per-model override editing in the model edit surface of `app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingProviderDetailPage.kt`: allow editing type / input-output modalities / tool / reasoning for a single model, persisted via the existing `ProviderSetting.editModel(model)` + `PreferencesStore.update` path (unchanged storage shape, FR-016); never re-resolve a user-edited model
-- [ ] T037 [US4] Guarantee corrections win at merge time: confirm `mergeCatalogIntoSettings`/`applyToProvider` run with all `preserve* = true` and never overwrite persisted user values; add any missing preserve wiring in `ModelCatalogService.kt`/`CatalogSettingsMerger.kt`
-- [ ] T038 [US4] Alias + provider-binding resolution in `app/src/main/java/me/rerere/rikkahub/data/ai/models/ModelCatalog.kt`: verify an unknown/niche model resolves through `exactEntries`/`canonicalEntries`/`api_aliases` to one canonical entry (FR-011), that `resolveModelEntry` honors provider/base-url hints, and that adding an aliased model never creates a duplicate configured provider
-- [ ] T039 [US4] Add US4 override strings to `app/src/main/res/values*/strings.xml` (all 7 locales): "Override", "Use defaults", "Reset to auto-detected", "Add alias" (FR-012)
+- [X] T036 [US4] Wire per-model override editing in the model edit surface of `app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingProviderDetailPage.kt`: allow editing type / input-output modalities / tool / reasoning for a single model, persisted via the existing `ProviderSetting.editModel(model)` + `PreferencesStore.update` path (unchanged storage shape, FR-016); never re-resolve a user-edited model
+- [X] T037 [US4] Guarantee corrections win at merge time: confirm `mergeCatalogIntoSettings`/`applyToProvider` run with all `preserve* = true` and never overwrite persisted user values; add any missing preserve wiring in `ModelCatalogService.kt`/`CatalogSettingsMerger.kt`
+- [X] T038 [US4] Alias + provider-binding resolution in `app/src/main/java/me/rerere/rikkahub/data/ai/models/ModelCatalog.kt`: verify an unknown/niche model resolves through `exactEntries`/`canonicalEntries`/`api_aliases` to one canonical entry (FR-011), that `resolveModelEntry` honors provider/base-url hints, and that adding an aliased model never creates a duplicate configured provider
+- [X] T039 [US4] Add US4 override strings to `app/src/main/res/values*/strings.xml` (all 7 locales): "Override", "Use defaults", "Reset to auto-detected", "Add alias" (FR-012)
 
 **Checkpoint**: All four stories functional and independently testable.
 

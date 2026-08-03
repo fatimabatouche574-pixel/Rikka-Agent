@@ -974,6 +974,11 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_provider_page_defaults_applied">已应用默认值</string>
   <string name="setting_provider_page_use_service_account">使用服务账号</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">覆盖</string>
+  <string name="setting_provider_page_override_desc">覆盖该模型的自动检测目录元数据。你的修改优先于目录更新。</string>
+  <string name="setting_provider_page_use_defaults">使用默认值</string>
+  <string name="setting_provider_page_reset_to_auto_detected">重置为自动检测</string>
+  <string name="setting_provider_page_add_alias">添加别名</string>
 
   <string name="setting_catalog_page_title">模型目录</string>
   <string name="setting_catalog_page_search_placeholder">搜索提供商…</string>

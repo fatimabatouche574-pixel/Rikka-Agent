@@ -942,6 +942,11 @@
   <string name="setting_provider_page_defaults_applied">Применены значения по умолчанию</string>
   <string name="setting_provider_page_use_service_account">Использовать сервисный аккаунт</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">Переопределить</string>
+  <string name="setting_provider_page_override_desc">Переопределяет автоматически определённые метаданные каталога для этой модели. Ваши исправления имеют приоритет над обновлениями каталога.</string>
+  <string name="setting_provider_page_use_defaults">Использовать по умолчанию</string>
+  <string name="setting_provider_page_reset_to_auto_detected">Сбросить к автоопределению</string>
+  <string name="setting_provider_page_add_alias">Добавить псевдоним</string>
 
   <string name="setting_catalog_page_title">Каталог</string>
   <string name="setting_catalog_page_search_placeholder">Поиск провайдеров…</string>

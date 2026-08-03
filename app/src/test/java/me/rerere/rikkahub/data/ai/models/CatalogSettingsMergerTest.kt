@@ -339,6 +339,147 @@ class CatalogSettingsMergerTest {
     }
 
     @Test
+    fun `US4 - user corrected fields survive repeated merge runs`() {
+        val providerId = uuid()
+        val snapshot = ModelCatalogParser.parse(
+            """
+            {
+              "schema_version": 2,
+              "providers": [{
+                "id": "$providerId",
+                "name": "Acme",
+                "base_url": "https://acme.example.com/v1",
+                "type": "openai",
+                "setup_models": []
+              }],
+              "model_families": [{
+                "id": "acme",
+                "match_patterns": ["acme-model"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "abilities": ["tool"]
+              }],
+              "models": []
+            }
+            """.trimIndent(),
+        )
+        // The catalog family says text-only/tool; the user corrected the model to image input
+        // + REASONING + a non-default type. None of those may be clobbered by an update.
+        val existing = ProviderSetting.OpenAI(
+            id = Uuid.parse(providerId),
+            name = "Acme",
+            baseUrl = "https://acme.example.com/v1",
+            models = listOf(
+                Model(
+                    modelId = "acme-model",
+                    displayName = "My Acme",
+                    type = ModelType.IMAGE,
+                    inputModalities = listOf(Modality.TEXT, Modality.IMAGE),
+                    outputModalities = listOf(Modality.TEXT, Modality.IMAGE),
+                    abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+                ),
+            ),
+        )
+        val resolver = ModelMetadataResolver(snapshotProvider = { snapshot })
+
+        val once = merge(Settings(providers = listOf(existing)), snapshot, resolver)
+        val merged = merge(once, snapshot, resolver)
+
+        val model = merged.providers.single().models.single()
+        assertEquals("My Acme", model.displayName)
+        assertEquals(ModelType.IMAGE, model.type)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), model.inputModalities)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), model.outputModalities)
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), model.abilities)
+    }
+
+    @Test
+    fun `US4 - unknown model in a configured provider falls back to safe chat defaults`() {
+        val providerId = uuid()
+        val snapshot = ModelCatalogParser.parse(
+            """
+            {
+              "schema_version": 2,
+              "providers": [{
+                "id": "$providerId",
+                "name": "Acme",
+                "base_url": "https://acme.example.com/v1",
+                "type": "openai"
+              }],
+              "model_families": [],
+              "models": []
+            }
+            """.trimIndent(),
+        )
+        val existing = ProviderSetting.OpenAI(
+            id = Uuid.parse(providerId),
+            name = "Acme",
+            baseUrl = "https://acme.example.com/v1",
+            models = listOf(Model(modelId = "brand-new-niche-model-xyz")),
+        )
+        val resolver = ModelMetadataResolver(snapshotProvider = { snapshot })
+
+        val merged = merge(Settings(providers = listOf(existing)), snapshot, resolver)
+
+        val model = merged.providers.single().models.single()
+        assertEquals("brand-new-niche-model-xyz", model.modelId)
+        assertEquals(ModelType.CHAT, model.type)
+        assertEquals(listOf(Modality.TEXT), model.inputModalities)
+        assertEquals(listOf(Modality.TEXT), model.outputModalities)
+        assertEquals(emptyList<ModelAbility>(), model.abilities)
+    }
+
+    @Test
+    fun `US4 - alias resolves to a single canonical entry, no duplicate configured providers`() {
+        val providerId = uuid()
+        val snapshot = ModelCatalogParser.parse(
+            """
+            {
+              "schema_version": 2,
+              "providers": [{
+                "id": "$providerId",
+                "name": "Acme",
+                "base_url": "https://acme.example.com/v1",
+                "type": "openai",
+                "setup_models": ["acme-model"]
+              }],
+              "models": [{
+                "id": "acme-model",
+                "canonical_model_id": "acme-model",
+                "api_aliases": ["acme", "acme/api"],
+                "type": "chat",
+                "abilities": ["tool", "reasoning"]
+              }],
+              "model_families": [],
+              "global_rules": []
+            }
+            """.trimIndent(),
+        )
+        val existing = ProviderSetting.OpenAI(
+            id = Uuid.parse(providerId),
+            name = "Acme",
+            baseUrl = "https://acme.example.com/v1",
+            models = listOf(Model(modelId = "acme-model")),
+        )
+        val resolver = ModelMetadataResolver(snapshotProvider = { snapshot })
+
+        // includeMissing=true would re-add the preset if it were not matched — it must stay at
+        // exactly the single configured provider (FR-011: aliases never duplicate providers).
+        val merged = merge(
+            Settings(providers = listOf(existing)),
+            snapshot,
+            resolver,
+            includeMissing = true,
+        )
+
+        assertEquals(1, merged.providers.size)
+        assertEquals(listOf(existing.id), merged.providers.map { it.id })
+        // The aliased model id resolves through the catalog to the canonical entry's capabilities.
+        val model = merged.providers.single().models.single()
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), model.abilities)
+    }
+
+    @Test
     fun `match ladder - type and base url match when uuid differs`() {
         val preset = preset(
             id = uuid(),

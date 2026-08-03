@@ -211,9 +211,6 @@ open class ModelMetadataResolver(
         options: ModelResolutionOptions,
     ): List<Modality> {
         val inputs = linkedSetOf(Modality.TEXT)
-        if (options.preserveExistingCapabilities && model.inputModalities.contains(Modality.IMAGE)) {
-            inputs += Modality.IMAGE
-        }
         if (
             catalogEntry?.supportsVision == true ||
             catalogEntry?.supportedModalities?.contains(Modality.IMAGE) == true
@@ -222,8 +219,18 @@ open class ModelMetadataResolver(
         }
 
         return when (resolvedType) {
-            ModelType.CHAT, ModelType.IMAGE ->
-                catalogEntry?.inputModalities?.takeIf { it.isNotEmpty() } ?: inputs.toList()
+            ModelType.CHAT, ModelType.IMAGE -> buildList {
+                // Catalog-derived input modalities (image support from the entry).
+                val catalogInputs = catalogEntry?.inputModalities?.takeIf { it.isNotEmpty() }
+                    ?: inputs.toList()
+                addAll(catalogInputs)
+                // FR-007 / US4: a user-corrected image input survives even when the catalog
+                // entry only declares text — corrections always win (never union away IMAGE).
+                if (options.preserveExistingCapabilities && model.inputModalities.contains(Modality.IMAGE)) {
+                    add(Modality.IMAGE)
+                }
+            }.distinct()
+
             ModelType.EMBEDDING -> listOf(Modality.TEXT)
         }
     }
@@ -235,14 +242,22 @@ open class ModelMetadataResolver(
         options: ModelResolutionOptions,
     ): List<Modality> {
         return when (resolvedType) {
-            ModelType.CHAT -> catalogEntry?.outputModalities?.takeIf { it.isNotEmpty() } ?: buildList {
-                add(Modality.TEXT)
+            ModelType.CHAT -> buildList {
+                addAll(
+                    catalogEntry?.outputModalities?.takeIf { it.isNotEmpty() }
+                        ?: listOf(Modality.TEXT),
+                )
+                // FR-007 / US4: user-corrected image output survives text-only catalog metadata.
                 if (options.preserveExistingCapabilities && model.outputModalities.contains(Modality.IMAGE)) {
                     add(Modality.IMAGE)
                 }
             }.distinct()
 
-            ModelType.IMAGE -> catalogEntry?.outputModalities?.takeIf { it.isNotEmpty() } ?: buildList {
+            ModelType.IMAGE -> buildList {
+                addAll(
+                    catalogEntry?.outputModalities?.takeIf { it.isNotEmpty() } ?: emptyList(),
+                )
+                // FR-007 / US4: a user-corrected text output survives catalog metadata.
                 if (options.preserveExistingCapabilities && model.outputModalities.contains(Modality.TEXT)) {
                     add(Modality.TEXT)
                 } else if (catalogEntry?.supportedModalities?.contains(Modality.TEXT) == true) {

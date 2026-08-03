@@ -58,7 +58,7 @@ fun mergeCatalogIntoSettings(
         // (icons/cost stay on the snapshot — R5), so layering catalog defaults onto a
         // matched provider is exactly re-resolving derived metadata. Everything else
         // (enabled, apiKey, models, order, identity) is untouched by design.
-        resolver.applyToProvider(provider)
+        resolver.applyToProvider(provider, MERGE_PRESERVE_OPTIONS)
     }
 
     val existingProviderIds = normalizedExisting.map { it.id }.toSet()
@@ -77,9 +77,22 @@ fun mergeCatalogIntoSettings(
     }
 
     return settings.copy(
-        providers = normalizedExisting + missingCatalogProviders.map(resolver::applyToProvider),
+        providers = normalizedExisting + missingCatalogProviders.map { provider ->
+            resolver.applyToProvider(provider, MERGE_PRESERVE_OPTIONS)
+        },
     )
 }
+
+/**
+ * The merger always re-resolves derived metadata with every `preserve*` flag set (I6) so
+ * persisted user values — display name, capabilities, type — win over catalog updates
+ * (FR-007 / US4). Never rely on `applyToProvider`'s default here: this is the guarantee.
+ */
+private val MERGE_PRESERVE_OPTIONS = ModelResolutionOptions(
+    preserveDisplayName = true,
+    preserveExistingCapabilities = true,
+    preserveExistingType = true,
+)
 
 /**
  * First-match-wins ladder with single-claim enforcement. Once a catalog provider has been

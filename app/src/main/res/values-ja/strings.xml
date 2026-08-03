@@ -942,6 +942,11 @@ mDNSアドレス: .localホスト名を使用し、IPを知らなくても同じ
   <string name="setting_provider_page_defaults_applied">デフォルトを適用</string>
   <string name="setting_provider_page_use_service_account">サービスアカウントを使用</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
+  <string name="setting_provider_page_override">オーバーライド</string>
+  <string name="setting_provider_page_override_desc">このモデルの自動検出されたカタログメタデータを上書きします。修正内容はカタログ更新より優先されます。</string>
+  <string name="setting_provider_page_use_defaults">デフォルトを使用</string>
+  <string name="setting_provider_page_reset_to_auto_detected">自動検出にリセット</string>
+  <string name="setting_provider_page_add_alias">エイリアスを追加</string>
 
   <string name="setting_catalog_page_title">カタログ</string>
   <string name="setting_catalog_page_search_placeholder">プロバイダを検索…</string>

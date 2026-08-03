@@ -465,4 +465,201 @@ class ModelMetadataResolverTest {
         assertTrue(resolver.hasCatalogEntry(Model(modelId = "known-model")))
         assertTrue(!resolver.hasCatalogEntry(Model(modelId = "unknown-model-xyz")))
     }
+
+    @Test
+    fun `US4 - non-default type survives repeated applyToModel with preserve flag`() {
+        val resolver = resolverFor(
+            """
+            {
+              "schema_version": 2,
+              "model_families": [{
+                "id": "acme",
+                "match_patterns": ["acme-model"],
+                "type": "chat",
+                "abilities": ["tool"]
+              }],
+              "models": []
+            }
+            """.trimIndent()
+        )
+        val userEdited = Model(
+            modelId = "acme-model",
+            type = ModelType.EMBEDDING,
+            inputModalities = listOf(Modality.TEXT),
+            outputModalities = listOf(Modality.TEXT),
+            abilities = listOf(ModelAbility.TOOL),
+        )
+        val options = ModelResolutionOptions(preserveExistingType = true)
+
+        val first = resolver.applyToModel(userEdited, options = options)
+        assertEquals(ModelType.EMBEDDING, first.type)
+        assertEquals(listOf(Modality.TEXT), first.inputModalities)
+        assertEquals(listOf(Modality.TEXT), first.outputModalities)
+
+        val second = resolver.applyToModel(first, options = options)
+        assertEquals(ModelType.EMBEDDING, second.type)
+        assertEquals(listOf(Modality.TEXT), second.inputModalities)
+    }
+
+    @Test
+    fun `US4 - user corrected image input survives re-runs even when catalog says text-only`() {
+        val resolver = resolverFor(
+            """
+            {
+              "schema_version": 2,
+              "model_families": [{
+                "id": "acme",
+                "match_patterns": ["acme-model"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "abilities": ["tool"]
+              }],
+              "models": []
+            }
+            """.trimIndent()
+        )
+        // User corrected the model to accept image input; the catalog family only knows text.
+        val userEdited = Model(
+            modelId = "acme-model",
+            displayName = "My Acme",
+            type = ModelType.CHAT,
+            inputModalities = listOf(Modality.TEXT, Modality.IMAGE),
+            outputModalities = listOf(Modality.TEXT),
+            abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+        )
+        val options = ModelResolutionOptions(
+            preserveDisplayName = true,
+            preserveExistingCapabilities = true,
+            preserveExistingType = true,
+        )
+
+        val first = resolver.applyToModel(userEdited, options = options)
+        assertEquals("My Acme", first.displayName)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), first.inputModalities)
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), first.abilities)
+
+        // Re-run: the correction must survive identically (FR-007 / US4-2).
+        val second = resolver.applyToModel(first, options = options)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), second.inputModalities)
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), second.abilities)
+        assertEquals("My Acme", second.displayName)
+    }
+
+    @Test
+    fun `US4 - user corrected image output survives re-runs even when catalog says text-only`() {
+        val resolver = resolverFor(
+            """
+            {
+              "schema_version": 2,
+              "model_families": [{
+                "id": "acme",
+                "match_patterns": ["acme-model"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"]
+              }],
+              "models": []
+            }
+            """.trimIndent()
+        )
+        val userEdited = Model(
+            modelId = "acme-model",
+            type = ModelType.CHAT,
+            inputModalities = listOf(Modality.TEXT),
+            outputModalities = listOf(Modality.TEXT, Modality.IMAGE),
+        )
+        val options = ModelResolutionOptions(preserveExistingCapabilities = true)
+
+        val first = resolver.applyToModel(userEdited, options = options)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), first.outputModalities)
+
+        val second = resolver.applyToModel(first, options = options)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), second.outputModalities)
+    }
+
+    @Test
+    fun `US4 - applyToProvider re-runs keep user corrections`() {
+        val resolver = resolverFor(
+            """
+            {
+              "schema_version": 2,
+              "model_families": [{
+                "id": "acme",
+                "match_patterns": ["acme-model"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "abilities": ["tool"]
+              }],
+              "models": []
+            }
+            """.trimIndent()
+        )
+        val provider = ProviderSetting.OpenAI(
+            baseUrl = "https://acme.example.com/v1",
+            models = listOf(
+                Model(
+                    modelId = "acme-model",
+                    displayName = "My Acme",
+                    type = ModelType.CHAT,
+                    inputModalities = listOf(Modality.TEXT, Modality.IMAGE),
+                    outputModalities = listOf(Modality.TEXT),
+                    abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+                ),
+            ),
+        )
+
+        // applyToProvider default options are all-preserve (US3 merger guarantee).
+        val first = resolver.applyToProvider(provider)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), first.models[0].inputModalities)
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), first.models[0].abilities)
+
+        val second = resolver.applyToProvider(first)
+        assertEquals(listOf(Modality.TEXT, Modality.IMAGE), second.models[0].inputModalities)
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), second.models[0].abilities)
+        assertEquals("My Acme", second.models[0].displayName)
+    }
+
+    @Test
+    fun `US4 - unknown model resolves to safe chat text defaults through applyToProvider`() {
+        val resolver = resolverFor(
+            """{"schema_version": 2, "providers": [], "model_families": [], "models": []}"""
+        )
+        val provider = ProviderSetting.OpenAI(
+            baseUrl = "https://mine.example.com/v1",
+            models = listOf(Model(modelId = "totally-unknown-model-xyz")),
+        )
+
+        val resolved = resolver.applyToProvider(provider)
+        val model = resolved.models.single()
+        assertEquals(ModelType.CHAT, model.type)
+        assertEquals(listOf(Modality.TEXT), model.inputModalities)
+        assertEquals(listOf(Modality.TEXT), model.outputModalities)
+        assertEquals(emptyList<ModelAbility>(), model.abilities)
+    }
+
+    @Test
+    fun `US4 - alias resolves to a single canonical entry with matching capabilities`() {
+        val resolver = resolverFor(
+            """
+            {
+              "schema_version": 2,
+              "models": [{
+                "id": "gpt-5",
+                "canonical_model_id": "gpt-5",
+                "api_aliases": ["gpt5", "openai/gpt-5"],
+                "type": "chat",
+                "abilities": ["tool", "reasoning"]
+              }]
+            }
+            """.trimIndent()
+        )
+
+        val viaAlias = resolver.applyToModel(Model(modelId = "gpt5"))
+        val viaPrefixed = resolver.applyToModel(Model(modelId = "openai/gpt-5"))
+        val viaCanonical = resolver.applyToModel(Model(modelId = "gpt-5"))
+
+        // All three ids resolve to the same single canonical model (FR-011), never duplicates.
+        assertEquals(listOf(ModelAbility.TOOL, ModelAbility.REASONING), viaAlias.abilities)
+        assertEquals(viaCanonical.abilities, viaAlias.abilities)
+        assertEquals(viaCanonical.abilities, viaPrefixed.abilities)
+    }
 }
