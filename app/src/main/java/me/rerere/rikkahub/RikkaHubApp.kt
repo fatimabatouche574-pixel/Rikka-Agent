@@ -344,9 +344,9 @@ class RikkaHubApp : Application() {
         get<AppScope>().launch {
             runCatching {
                 val store = get<SettingsStore>()
-                val current = store.settingsFlowRaw.first()
+                val current = store.settingsFlow.first()
                 store.update(current.copy(launchCount = current.launchCount + 1))
-                Log.i(TAG, "incrementLaunchCount: ${store.settingsFlowRaw.first().launchCount}")
+                Log.i(TAG, "incrementLaunchCount: ${store.settingsFlow.first().launchCount}")
             }.onFailure {
                 Log.e(TAG, "incrementLaunchCount failed", it)
             }
@@ -448,7 +448,7 @@ class RikkaHubApp : Application() {
         get<AppScope>().launch {
             runCatching {
                 delay(500)
-                val settings = get<SettingsStore>().settingsFlowRaw.first()
+                val settings = get<SettingsStore>().settingsFlow.first()
                 if (settings.webServerEnabled) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         ContextCompat.checkSelfPermission(

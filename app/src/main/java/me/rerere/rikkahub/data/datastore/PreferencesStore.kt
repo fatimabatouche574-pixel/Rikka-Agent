@@ -364,6 +364,7 @@ class SettingsStore(
                         assistant.copy(enabledSkills = assistant.enabledSkills + skillsToSeed)
                     } else assistant
                 }.toMutableList()
+            }
             // One-shot migration: enable all memory/self-improvement toggles on existing
             // assistants. The user can still opt out per-assistant afterwards.
             val migratedAssistants = if (!it.memoryTogglesMigrated) {
@@ -697,12 +698,12 @@ data class Settings(
     val quickMessages: List<QuickMessage> = emptyList(),
     val webServerEnabled: Boolean = false,
     val webServerPort: Int = 8080,
+    val webServerLocalhostOnly: Boolean = true,
+    val launchCount: Int = 0,
     val webServerJwtEnabled: Boolean = false,
     val webServerAccessPassword: String = "",
-    val webServerLocalhostOnly: Boolean = false,
     val aiLogLevel: AiLogLevel = AiLogLevel.INFO,
     val backupReminderConfig: BackupReminderConfig = BackupReminderConfig(),
-    val launchCount: Int = 0,
     val sponsorAlertDismissedAt: Int = 0,
 ) {
     companion object {
