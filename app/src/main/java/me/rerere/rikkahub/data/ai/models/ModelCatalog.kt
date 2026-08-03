@@ -15,7 +15,7 @@ import me.rerere.ai.registry.ModelIdNormalizer
 import me.rerere.rikkahub.utils.JsonInstant
 
 private const val TAG = "ModelCatalog"
-private const val MODEL_CATALOG_ASSET_NAME = "lastchat_catalog.json"
+private const val MODEL_CATALOG_ASSET_NAME = "catalog/lastchat_catalog.json"
 
 /**
  * Base URL the catalog-relative icon paths (e.g. `icons/...`) are expanded against. Points

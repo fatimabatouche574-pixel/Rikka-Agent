@@ -17,7 +17,7 @@ import okhttp3.Request
 private const val TAG = "ModelCatalogService"
 private const val MODEL_CATALOG_DIR_NAME = "model_catalog"
 private const val MODEL_CATALOG_FILE_NAME = "lastchat_catalog.json"
-private const val MODEL_CATALOG_ASSET_NAME = "lastchat_catalog.json"
+private const val MODEL_CATALOG_ASSET_NAME = "catalog/lastchat_catalog.json"
 
 /**
  * Update endpoint (R6). The file is published on the repo-owned fork; until it exists the
