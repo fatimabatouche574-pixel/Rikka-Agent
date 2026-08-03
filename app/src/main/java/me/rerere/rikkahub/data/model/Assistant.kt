@@ -26,9 +26,9 @@ data class Assistant(
     val topP: Float? = null,
     val contextMessageSize: Int = 0,
     val streamOutput: Boolean = true,
-    val enableMemory: Boolean = false,
-    val useGlobalMemory: Boolean = false, // 使用全局共享记忆而非助手隔离记忆
-    val enableRecentChatsReference: Boolean = false,
+    val enableMemory: Boolean = true,
+    val useGlobalMemory: Boolean = true, // 使用全局共享记忆而非助手隔离记忆
+    val enableRecentChatsReference: Boolean = true,
     val messageTemplate: String = "{{ message }}",
     val presetMessages: List<UIMessage> = emptyList(),
     val quickMessageIds: Set<Uuid> = emptySet(),
@@ -47,7 +47,7 @@ data class Assistant(
     val modeInjectionIds: Set<Uuid> = emptySet(),      // 关联的模式注入 ID
     val lorebookIds: Set<Uuid> = emptySet(),            // 关联的 Lorebook ID
     val enabledSkills: Set<String> = emptySet(),        // 启用的 skill 名称列表
-    val enableTimeReminder: Boolean = false,            // 时间间隔提醒注入
+    val enableTimeReminder: Boolean = true,            // 时间间隔提醒注入
     // Phase 11 — Sub-agents settings. Defaults to "inherit from main" (null model id +
     // empty system prompt → built-in focused-sub-agent prompt). Each assistant has its
     // own concurrency cap; we hard-cap globally at 16 across all assistants in the engine.
@@ -69,9 +69,9 @@ data class Assistant(
     val allowConversationPromptInjection: Boolean = false, // 允许对话单独绑定提示词注入
     // Phase 17 — agent self-improvement. Additive DataStore fields (serialization
     // defaults keep existing stored JSON backward compatible; no Room migration).
-    val enableSessionRecall: Boolean = false,          // register conversation_search + recent_chats tools
-    val enableLessons: Boolean = false,                // lesson capture on failure + lesson injection
-    val enableSkillSelfImprovement: Boolean = false,   // agent may offer to write a procedure skill
+    val enableSessionRecall: Boolean = true,          // register conversation_search + recent_chats tools
+    val enableLessons: Boolean = true,                // lesson capture on failure + lesson injection
+    val enableSkillSelfImprovement: Boolean = true,   // agent may offer to write a procedure skill
 )
 
 @Serializable
