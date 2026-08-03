@@ -236,8 +236,8 @@ class SettingsStore(
                     ?.let { raw ->
                         runCatching {
                             JsonInstant.decodeFromString<Set<String>>(raw)
-                                .mapNotNull { runCatching { Uuid.parse(it) }.getOrNull() }
-                                .toSet()
+            .mapNotNull { runCatching { Uuid.parse(it) }.getOrNull() }
+            .toSet()
                         }.getOrNull()
                     } ?: emptySet(),
                 assistants = JsonInstant.decodeFromString(preferences[ASSISTANTS] ?: "[]"),
@@ -318,9 +318,9 @@ class SettingsStore(
                     when (defaultProvider) {
                         is ProviderSetting.AICore -> providers.add(0, defaultProvider.copyProvider())
                         is ProviderSetting.LiteRtLocal -> {
-                            // Insert right after AICore, or at 0 if AICore is absent.
-                            // indexOfFirst returns -1 when absent; -1 + 1 = 0, so insert at 0.
-                            val insertAt = providers.indexOfFirst { it is ProviderSetting.AICore } + 1
+            // Insert right after AICore, or at 0 if AICore is absent.
+            // indexOfFirst returns -1 when absent; -1 + 1 = 0, so insert at 0.
+            val insertAt = providers.indexOfFirst { it is ProviderSetting.AICore } + 1
                             providers.add(insertAt, defaultProvider.copyProvider())
                         }
                         else -> providers.add(defaultProvider.copyProvider())
@@ -364,7 +364,21 @@ class SettingsStore(
                         assistant.copy(enabledSkills = assistant.enabledSkills + skillsToSeed)
                     } else assistant
                 }.toMutableList()
-            }
+            // One-shot migration: enable all memory/self-improvement toggles on existing
+            // assistants. The user can still opt out per-assistant afterwards.
+            val migratedAssistants = if (!it.memoryTogglesMigrated) {
+                assistants.map { assistant ->
+                    assistant.copy(
+                        enableMemory = true,
+                        useGlobalMemory = true,
+                        enableRecentChatsReference = true,
+                        enableTimeReminder = true,
+                        enableSessionRecall = true,
+                        enableLessons = true,
+                        enableSkillSelfImprovement = true,
+                    )
+                }.toMutableList()
+            } else assistants
             val newAutoEnabled = it.autoEnabledDefaultSkills + DEFAULT_AUTO_ENABLED_SKILLS
             val ttsProviders = it.ttsProviders.ifEmpty { DEFAULT_TTS_PROVIDERS }.toMutableList()
             DEFAULT_TTS_PROVIDERS.forEach { defaultTTSProvider ->
@@ -374,8 +388,9 @@ class SettingsStore(
             }
             it.copy(
                 providers = providers,
-                assistants = assistants,
+                assistants = migratedAssistants,
                 autoEnabledDefaultSkills = newAutoEnabled,
+                memoryTogglesMigrated = true,
                 ttsProviders = ttsProviders,
             )
         }
@@ -665,6 +680,7 @@ data class Settings(
      * never re-added, so toggling it off sticks across launches.
      */
     val autoEnabledDefaultSkills: Set<String> = emptySet(),
+    val memoryTogglesMigrated: Boolean = false,
     val assistantTags: List<Tag> = emptyList(),
     val searchServices: List<SearchServiceOptions> = listOf(SearchServiceOptions.DEFAULT),
     val searchCommonOptions: SearchCommonOptions = SearchCommonOptions(),
