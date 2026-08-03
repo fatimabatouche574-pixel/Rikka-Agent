@@ -938,6 +938,8 @@ mDNSアドレス: .localホスト名を使用し、IPを知らなくても同じ
   <string name="setting_provider_page_text">テキスト</string>
   <string name="setting_provider_page_title">プロバイダー</string>
   <string name="setting_provider_page_tool">ツール</string>
+  <string name="setting_provider_page_tool_use">ツール使用</string>
+  <string name="setting_provider_page_defaults_applied">デフォルトを適用</string>
   <string name="setting_provider_page_use_service_account">サービスアカウントを使用</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
 

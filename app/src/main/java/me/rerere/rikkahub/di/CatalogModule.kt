@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.models.ModelCatalogService
+import me.rerere.rikkahub.data.ai.models.ModelMetadataResolver
 import okhttp3.OkHttpClient
 import org.koin.dsl.module
 
@@ -14,5 +15,10 @@ val catalogModule = module {
             context = get(),
             httpClient = get(),
         )
+    }
+
+    single<ModelMetadataResolver> {
+        val service = get<ModelCatalogService>()
+        ModelMetadataResolver(snapshotProvider = service::snapshotOrNull)
     }
 }

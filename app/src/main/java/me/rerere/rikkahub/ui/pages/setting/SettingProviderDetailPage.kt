@@ -101,6 +101,8 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
+import me.rerere.rikkahub.data.ai.models.ModelMetadataResolver
+import me.rerere.rikkahub.data.ai.models.ModelResolutionOptions
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.ai.ModelAbilityTag
 import me.rerere.rikkahub.ui.components.ai.ModelModalityTag
@@ -715,6 +717,7 @@ private fun AddModelButton(
 ) {
     val dialogState = useEditState<Model> { onAddModel(it) }
     val scope = rememberCoroutineScope()
+    val catalogResolver = koinInject<ModelMetadataResolver>()
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -723,8 +726,9 @@ private fun AddModelButton(
         ModelPicker(
             models = models,
             selectedModels = selectedModels,
+            providerHint = parentProvider,
             onModelSelected = { model ->
-                onAddModel(model.enrichCapabilities())
+                onAddModel(model.enrichCapabilities(catalogResolver, parentProvider))
             },
             onModelDeselected = { model ->
                 onRemoveModel(model)
@@ -734,7 +738,7 @@ private fun AddModelButton(
                     parentProvider.copyProvider(
                         models = parentProvider.models + it.filter { model ->
                             parentProvider.models.none { existing -> existing.modelId == model.modelId }
-                        }.map { model -> model.enrichCapabilities() }
+                        }.map { model -> model.enrichCapabilities(catalogResolver, parentProvider) }
                     )
                 )
             },
@@ -856,9 +860,11 @@ private fun ModelPicker(
     onModelSelected: (Model) -> Unit,
     onModelDeselected: (Model) -> Unit,
     onAllModelSelected: (List<Model>) -> Unit,
-    onAllModelDeselected: (List<Model>) -> Unit
+    onAllModelDeselected: (List<Model>) -> Unit,
+    providerHint: ProviderSetting? = null,
 ) {
     var showModal by remember { mutableStateOf(false) }
+    val catalogResolver = koinInject<ModelMetadataResolver>()
     if (showModal) {
         ModalBottomSheet(
             onDismissRequest = { showModal = false },
@@ -956,7 +962,9 @@ private fun ModelPicker(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
-                                        val modelMeta = remember(it) { it.enrichCapabilities() }
+                                        val modelMeta = remember(it, providerHint) {
+                                            it.enrichCapabilities(catalogResolver, providerHint)
+                                        }
                                         ModelModalityTag(
                                             model = modelMeta,
                                         )
@@ -1580,18 +1588,30 @@ private fun ProviderOverrideSettings(
 }
 
 /**
- * Prefer capabilities auto-detected at fetch time (OpenRouter's /models populates
- * supportedParameters, modalities, abilities and the IMAGE model type); only fall back to
- * the static ModelRegistry lookup for providers that return bare model ids. Without this,
- * the registry lookup clobbered OpenRouter's detected image/tool/reasoning capabilities.
+ * Auto-detected capabilities for a model being added/merged (never re-runs on persisted,
+ * user-edited models — FR-007). Prefer capabilities already fetched at fetch time
+ * (OpenRouter's /models populates supportedParameters, modalities, abilities and the IMAGE
+ * model type); otherwise consult the catalog `ModelMetadataResolver` first, then fall through
+ * to the static ModelRegistry DSL, then safe defaults (its lookups already return
+ * CHAT / TEXT→TEXT / no abilities for unknown ids).
  */
-private fun Model.enrichCapabilities(): Model =
+private fun Model.enrichCapabilities(
+    resolver: ModelMetadataResolver,
+    providerHint: ProviderSetting? = null,
+): Model {
     if (supportedParameters.isNotEmpty()) {
-        this
-    } else {
-        copy(
-            inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(modelId),
-            outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(modelId),
-            abilities = ModelRegistry.MODEL_ABILITIES.getData(modelId),
+        return this
+    }
+    if (resolver.hasCatalogEntry(this, providerHint)) {
+        return resolver.applyToModel(
+            this,
+            providerHint = providerHint,
+            options = ModelResolutionOptions(preserveDisplayName = true),
         )
     }
+    return copy(
+        inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(modelId),
+        outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(modelId),
+        abilities = ModelRegistry.MODEL_ABILITIES.getData(modelId),
+    )
+}

@@ -990,6 +990,8 @@
   <string name="setting_provider_page_text">Text</string>
   <string name="setting_provider_page_title">Providers</string>
   <string name="setting_provider_page_tool">Tool</string>
+  <string name="setting_provider_page_tool_use">Tool use</string>
+  <string name="setting_provider_page_defaults_applied">Defaults applied</string>
   <string name="setting_provider_page_use_service_account">Use Service Account</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
   <string name="setting_catalog_page_title">Catalog</string>

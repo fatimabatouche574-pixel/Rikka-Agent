@@ -936,6 +936,8 @@
   <string name="setting_provider_page_text">文字</string>
   <string name="setting_provider_page_title">提供商</string>
   <string name="setting_provider_page_tool">工具</string>
+  <string name="setting_provider_page_tool_use">工具使用</string>
+  <string name="setting_provider_page_defaults_applied">已套用預設值</string>
   <string name="setting_provider_page_use_service_account">使用服務帳號</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
 

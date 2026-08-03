@@ -938,6 +938,8 @@
   <string name="setting_provider_page_text">Текст</string>
   <string name="setting_provider_page_title">Провайдеры</string>
   <string name="setting_provider_page_tool">Инструмент</string>
+  <string name="setting_provider_page_tool_use">Использование инструментов</string>
+  <string name="setting_provider_page_defaults_applied">Применены значения по умолчанию</string>
   <string name="setting_provider_page_use_service_account">Использовать сервисный аккаунт</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
 

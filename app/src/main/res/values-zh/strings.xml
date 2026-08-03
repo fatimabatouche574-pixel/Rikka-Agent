@@ -970,6 +970,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_provider_page_text">文本</string>
   <string name="setting_provider_page_title">提供商</string>
   <string name="setting_provider_page_tool">工具</string>
+  <string name="setting_provider_page_tool_use">工具使用</string>
+  <string name="setting_provider_page_defaults_applied">已应用默认值</string>
   <string name="setting_provider_page_use_service_account">使用服务账号</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
 

@@ -931,6 +931,8 @@
   <string name="setting_provider_page_text">نص</string>
   <string name="setting_provider_page_title">المزوّدون</string>
   <string name="setting_provider_page_tool">أداة</string>
+  <string name="setting_provider_page_tool_use">استخدام الأدوات</string>
+  <string name="setting_provider_page_defaults_applied">تم تطبيق القيم الافتراضية</string>
   <string name="setting_provider_page_vertex_ai">Vertex AI</string>
 
   <string name="setting_catalog_page_title">الكتالوج</string>
