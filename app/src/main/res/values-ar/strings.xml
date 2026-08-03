@@ -1524,4 +1524,30 @@
   <string name="skill_detail_save_failed">فشل الحفظ</string>
   <string name="update_download_description">جارٍ تنزيل التحديث…</string>
   <string name="chat_stop_generation_before_delete">من فضلك أوقف التوليد قبل حذف الرسائل</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">أمر غير معروف — جرّب /help.</string>
+  <string name="slash_command_help_header">الأوامر</string>
+  <string name="slash_command_fresh_conversation">بدأت محادثة جديدة.</string>
+  <string name="slash_command_stopped">تم إيقاف التوليد.</string>
+  <string name="slash_command_undo_nothing">لا يوجد ما يمكن التراجع عنه.</string>
+  <string name="slash_command_undo_done">تم التراجع عن آخر تبادل.</string>
+  <string name="slash_command_current_model">النموذج الحالي: %1$s</string>
+  <string name="slash_command_switched_model">تم التبديل إلى %1$s.</string>
+  <string name="slash_command_model_usage">الاستخدام: /model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">لا يوجد نموذج يطابق \"%1$s\".</string>
+  <string name="slash_command_no_chat_models">لم يتم إعداد نماذج المحادثة.</string>
+  <string name="slash_command_no_skills">لا توجد مهارات مفعّلة لهذا المساعد.</string>
+  <string name="slash_command_no_memory">لا توجد ذاكرة محفوظة في هذا النطاق.</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — تقرير التشخيص</string>
+  <string name="slash_cmd_new">بدء محادثة جديدة (يمسح السجل)</string>
+  <string name="slash_cmd_clear">مسح المحادثة الحالية</string>
+  <string name="slash_cmd_stop">إلغاء التوليد الحالي فوراً</string>
+  <string name="slash_cmd_cancel">إلغاء التوليد الحالي</string>
+  <string name="slash_cmd_help">سرد جميع أوامر الشرطة المائلة</string>
+  <string name="slash_cmd_model">عرض أو تبديل نموذج المحادثة. الاستخدام: /model [name]</string>
+  <string name="slash_cmd_skills">سرد المهارات المفعّلة</string>
+  <string name="slash_cmd_memory">عرض الذاكرة المحفوظة في النطاق الفعلي</string>
+  <string name="slash_cmd_doctor">تشغيل تشخيص التطبيق — الصلاحيات، الخدمات، قاعدة البيانات، الشبكة</string>
+  <string name="slash_cmd_undo">التراجع عن آخر تبادل</string>
 </resources>

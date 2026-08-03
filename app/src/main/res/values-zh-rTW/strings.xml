@@ -1806,4 +1806,30 @@
   <string name="chat_page_delete_folder_generating">此資料夾中的部分對話仍在生成中。請先停止它們再刪除。</string>
   <string name="setting_display_page_tts_read_outside_brackets_title">TTS 不朗讀括號內的內容</string>
   <string name="setting_display_page_tts_read_outside_brackets_desc">啟用後，TTS 將不朗讀括號內的內容</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">未知命令 — 試試 /help。</string>
+  <string name="slash_command_help_header">命令</string>
+  <string name="slash_command_fresh_conversation">已開始新對話。</string>
+  <string name="slash_command_stopped">已停止生成。</string>
+  <string name="slash_command_undo_nothing">沒有可復原的內容。</string>
+  <string name="slash_command_undo_done">已復原上一次對話。</string>
+  <string name="slash_command_current_model">目前模型：%1$s</string>
+  <string name="slash_command_switched_model">已切換到 %1$s。</string>
+  <string name="slash_command_model_usage">用法：/model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">沒有符合\"%1$s\"的模型。</string>
+  <string name="slash_command_no_chat_models">尚未設定聊天模型。</string>
+  <string name="slash_command_no_skills">此助手未啟用技能。</string>
+  <string name="slash_command_no_memory">目前範圍內沒有儲存的記憶。</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — 診斷報告</string>
+  <string name="slash_cmd_new">開始新對話（清除歷史）</string>
+  <string name="slash_cmd_clear">清除目前對話</string>
+  <string name="slash_cmd_stop">立即取消目前生成</string>
+  <string name="slash_cmd_cancel">取消目前生成</string>
+  <string name="slash_cmd_help">列出所有斜線指令</string>
+  <string name="slash_cmd_model">顯示或切換聊天模型。用法：/model [name]</string>
+  <string name="slash_cmd_skills">列出已啟用的技能</string>
+  <string name="slash_cmd_memory">顯示有效範圍內的已存記憶</string>
+  <string name="slash_cmd_doctor">執行應用程式診斷 — 權限、服務、資料庫、網路</string>
+  <string name="slash_cmd_undo">復原上一次對話</string>
 </resources>

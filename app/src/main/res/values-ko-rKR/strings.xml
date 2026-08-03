@@ -1808,4 +1808,30 @@ mDNS 주소: .local 호스트네임을 사용하며, IP를 몰라도 같은 네�
   <string name="chat_page_delete_folder_generating">이 폴더의 일부 대화가 아직 생성 중입니다. 삭제하기 전에 중지해 주세요.</string>
   <string name="setting_display_page_tts_read_outside_brackets_title">TTS 괄호 안 내용 읽지 않기</string>
   <string name="setting_display_page_tts_read_outside_brackets_desc">활성화하면 TTS가 괄호 안의 내용을 읽지 않습니다</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">알 수 없는 명령입니다 — /help를 사용해 보세요.</string>
+  <string name="slash_command_help_header">명령</string>
+  <string name="slash_command_fresh_conversation">새 대화를 시작했습니다.</string>
+  <string name="slash_command_stopped">생성을 중지했습니다.</string>
+  <string name="slash_command_undo_nothing">되돌릴 내용이 없습니다.</string>
+  <string name="slash_command_undo_done">마지막 대화를 되돌렸습니다.</string>
+  <string name="slash_command_current_model">현재 모델: %1$s</string>
+  <string name="slash_command_switched_model">%1$s(으)로 전환했습니다.</string>
+  <string name="slash_command_model_usage">사용법: /model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">\"%1$s\"과(와) 일치하는 모델이 없습니다.</string>
+  <string name="slash_command_no_chat_models">채팅 모델이 구성되지 않았습니다.</string>
+  <string name="slash_command_no_skills">이 어시스턴트에 대해 활성화된 스킬이 없습니다.</string>
+  <string name="slash_command_no_memory">이 범위에 저장된 메모리가 없습니다.</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — 진단 보고서</string>
+  <string name="slash_cmd_new">새 대화 시작(기록 지우기)</string>
+  <string name="slash_cmd_clear">현재 대화 지우기</string>
+  <string name="slash_cmd_stop">현재 생성을 즉시 취소</string>
+  <string name="slash_cmd_cancel">현재 생성 취소</string>
+  <string name="slash_cmd_help">모든 슬래시 명령 나열</string>
+  <string name="slash_cmd_model">채팅 모델 표시/전환. 사용법: /model [name]</string>
+  <string name="slash_cmd_skills">활성화된 스킬 나열</string>
+  <string name="slash_cmd_memory">유효 범위의 저장된 메모리 표시</string>
+  <string name="slash_cmd_doctor">앱 진단 실행 — 권한, 서비스, DB, 네트워크</string>
+  <string name="slash_cmd_undo">마지막 대화 되돌리기</string>
 </resources>

@@ -1808,4 +1808,30 @@
   <string name="chat_page_delete_folder_generating">Некоторые беседы в этой папке все еще генерируются. Пожалуйста, остановите их перед удалением.</string>
   <string name="setting_display_page_tts_read_outside_brackets_title">TTS не читает текст в скобках</string>
   <string name="setting_display_page_tts_read_outside_brackets_desc">Если включено, TTS не будет читать содержимое в скобках</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">Неизвестная команда — попробуйте /help.</string>
+  <string name="slash_command_help_header">Команды</string>
+  <string name="slash_command_fresh_conversation">Новый разговор начат.</string>
+  <string name="slash_command_stopped">Генерация остановлена.</string>
+  <string name="slash_command_undo_nothing">Нечего отменять.</string>
+  <string name="slash_command_undo_done">Последний обмен отменён.</string>
+  <string name="slash_command_current_model">Текущая модель: %1$s</string>
+  <string name="slash_command_switched_model">Переключено на %1$s.</string>
+  <string name="slash_command_model_usage">Использование: /model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">Нет модели, соответствующей \"%1$s\".</string>
+  <string name="slash_command_no_chat_models">Чат-модели не настроены.</string>
+  <string name="slash_command_no_skills">Для этого ассистента не включены навыки.</string>
+  <string name="slash_command_no_memory">В этой области нет сохранённых воспоминаний.</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — диагностический отчёт</string>
+  <string name="slash_cmd_new">Начать новый разговор (очищает историю)</string>
+  <string name="slash_cmd_clear">Очистить текущий разговор</string>
+  <string name="slash_cmd_stop">Немедленно отменить текущую генерацию</string>
+  <string name="slash_cmd_cancel">Отменить текущую генерацию</string>
+  <string name="slash_cmd_help">Список всех слэш-команд</string>
+  <string name="slash_cmd_model">Показать или сменить чат-модель. Использование: /model [name]</string>
+  <string name="slash_cmd_skills">Список включённых навыков</string>
+  <string name="slash_cmd_memory">Показать сохранённые воспоминания в действующей области</string>
+  <string name="slash_cmd_doctor">Диагностика приложения — разрешения, службы, БД, сеть</string>
+  <string name="slash_cmd_undo">Отменить последний обмен</string>
 </resources>

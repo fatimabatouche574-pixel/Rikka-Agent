@@ -26,6 +26,7 @@ import me.rerere.common.android.appTempFolder
 import com.whl.quickjs.android.QuickJSLoader
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.catalogModule
+import me.rerere.rikkahub.di.commandModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.di.viewModelModule
@@ -58,7 +59,7 @@ class RikkaHubApp : Application() {
             androidLogger()
             androidContext(this@RikkaHubApp)
             workManagerFactory()
-            modules(appModule, viewModelModule, dataSourceModule, repositoryModule, catalogModule)
+            modules(appModule, viewModelModule, dataSourceModule, repositoryModule, catalogModule, commandModule)
         }
         this.createNotificationChannel()
 

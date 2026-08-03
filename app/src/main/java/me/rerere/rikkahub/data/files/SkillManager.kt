@@ -435,6 +435,7 @@ class SkillManager(
                 compatibility = frontmatter["compatibility"],
                 autoLoad = frontmatter["auto_load"]?.equals("true", ignoreCase = true) == true,
                 autoLoadPath = frontmatter["auto_load_path"]?.takeIf { it.isNotBlank() },
+                commands = SkillFrontmatterParser.parseCommands(frontmatter["commands"]),
                 skillDir = skillDir,
             )
         }.getOrElse {
@@ -465,6 +466,10 @@ data class SkillMetadata(
     // while the tool list is fixed for the whole turn. Dropped rather than faked.
     val autoLoad: Boolean = false,
     val autoLoadPath: String? = null,
+    // Phase 17 / US5 — optional `commands:` frontmatter: "/name: one-line description"
+    // entries contributed to the slash-command registry when the skill is enabled. Parsed
+    // as comma-separated and/or repeatable lines; backward compatible (default empty).
+    val commands: List<String> = emptyList(),
     val skillDir: File,
 ) {
     val skillFile: File get() = skillDir.resolve("SKILL.md")
@@ -514,6 +519,19 @@ object SkillFrontmatterParser {
             }
         }
         return result
+    }
+
+    /**
+     * Parse the `commands:` frontmatter value into a list of "/name: description" entries.
+     * Accepts both a single comma-separated line and a repeatable list where every entry
+     * starts with a slash (e.g. "commands: /backup: run backup, /restore: run restore").
+     * Entries not starting with "/" are skipped (mirrors the US5 contract §1).
+     */
+    fun parseCommands(raw: String?): List<String> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return raw.split(',')
+            .map { it.trim() }
+            .filter { it.startsWith("/") && it.contains(':') }
     }
 
     fun extractBody(content: String): String {

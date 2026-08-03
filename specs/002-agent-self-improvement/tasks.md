@@ -26,8 +26,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Verify baseline before any changes: run `./gradlew test` (existing 1286+ tests green) and `./gradlew :app:assembleDebug` (APK builds)
-- [ ] T002 Create new package directories `app/src/main/java/me/rerere/rikkahub/data/command/` and `app/src/main/java/me/rerere/rikkahub/data/lesson/`
+- [X] T001 Verify baseline before any changes: run `./gradlew test` (existing 1286+ tests green) and `./gradlew :app:assembleDebug` (APK builds)
+- [X] T002 Create new package directories `app/src/main/java/me/rerere/rikkahub/data/command/` and `app/src/main/java/me/rerere/rikkahub/data/lesson/`
 
 ---
 
@@ -37,8 +37,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add three additive Boolean fields to `Assistant` in `app/src/main/java/me/rerere/rikkahub/data/model/Assistant.kt`: `enableSessionRecall = false`, `enableLessons = false`, `enableSkillSelfImprovement = false` (kotlinx.serialization default decoding keeps existing stored JSON backward compatible; no migration)
-- [ ] T004 [P] Create Koin module `app/src/main/java/me/rerere/rikkahub/di/CommandModule.kt` (empty skeleton) and register it in `di/AppModule.kt`
+- [X] T003 Add three additive Boolean fields to `Assistant` in `app/src/main/java/me/rerere/rikkahub/data/model/Assistant.kt`: `enableSessionRecall = false`, `enableLessons = false`, `enableSkillSelfImprovement = false` (kotlinx.serialization default decoding keeps existing stored JSON backward compatible; no migration)
+- [X] T004 [P] Create Koin module `app/src/main/java/me/rerere/rikkahub/di/CommandModule.kt` (empty skeleton) and register it in `di/AppModule.kt`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -54,22 +54,22 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T005 [P] [US1] Contract test for the registry in `app/src/test/java/me/rerere/rikkahub/data/command/SlashCommandRegistryTest.kt` (registration, core-wins-over-skill collision, skill-vs-skill first-installed-wins, skill-command contribution from `SkillMetadata.commands`, unknown-token lookup)
-- [ ] T006 [P] [US1] Contract test for the dispatcher in `app/src/test/java/me/rerere/rikkahub/data/command/SlashCommandDispatcherTest.kt` (parse `/cmd arg`, strip `@botname`, dispatch, `Ignored` fall-through, unknown → localized "try /help" and never falls through)
+- [X] T005 [P] [US1] Contract test for the registry in `app/src/test/java/me/rerere/rikkahub/data/command/SlashCommandRegistryTest.kt` (registration, core-wins-over-skill collision, skill-vs-skill first-installed-wins, skill-command contribution from `SkillMetadata.commands`, unknown-token lookup)
+- [X] T006 [P] [US1] Contract test for the dispatcher in `app/src/test/java/me/rerere/rikkahub/data/command/SlashCommandDispatcherTest.kt` (parse `/cmd arg`, strip `@botname`, dispatch, `Ignored` fall-through, unknown → localized "try /help" and never falls through)
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Create `SlashCommand.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommand.kt` (data class + `SlashCommandSource`/`SlashCommandArgSpec`/`SlashCommandApprovalHint` enums + sealed `SlashCommandResult` Handled/Ignored)
-- [ ] T008 [P] [US1] Create `SlashCommandContext.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandContext.kt` (surface-agnostic context + read-only `SlashCommandServices` bundle: ChatService, SettingsStore, MemoryRepository, LessonRepository, SkillManager, ConversationRepository)
-- [ ] T009 [US1] Implement `SlashCommandRegistry` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandRegistry.kt` (register core at construction, `commands()` snapshot, `findByToken`, `registerSkillCommands` deriving from `SkillManager.listSkills()` at dispatch time, `activeSkillNameFor`, `collisionFlags`; core-wins + first-installed-wins, FR-005)
-- [ ] T010 [US1] Implement `SlashCommandDispatcher` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandDispatcher.kt` (parse `/cmd@botname arg`, dispatch, unknown → localized `unknown_command` pointing to `/help`, return `true`; log to existing `SlashCommandLog`)
-- [ ] T011 [P] [US1] Implement `UndoHandler.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/UndoHandler.kt` (best-effort shallow `/undo`: remove the last user+assistant message node pair of `context.conversationId` via MessageNodeDAO/ChatService, refresh FTS via `MessageFtsManager.indexConversation`, reply "nothing to undo" when history empty)
-- [ ] T012 [US1] Register the core command handlers in `SlashCommandRegistry.kt` reusing existing service methods: `/new` `/clear` (`handleResetCommand`), `/stop` `/cancel` (`handleStopCommand`), `/help` (render from registry), `/model` (`handleModelCommand`/`setChatModel`), `/skills` (SkillManager.listSkills), `/memory` (MemoryRepository effective scope), `/doctor` (`handleDoctorCommand`), `/undo` (T011)
-- [ ] T013 [US1] Replace the hard-coded `handleBuiltInCommand` `when` in `app/src/main/java/me/rerere/rikkahub/service/TelegramCommandHandlers.kt:49-80` with `SlashCommandDispatcher.dispatch` + a Telegram `SlashCommandContext` adapter (reply → `bot.sendMessage`); keep the whitelist gate (`TelegramBotService.kt:580-589`) running first
-- [ ] T014 [US1] Derive `BUILT_IN_COMMANDS` in `app/src/main/java/me/rerere/rikkahub/service/TelegramBotService.kt:2144-2154` from `registry.commands()` and auto-sync `setMyCommands` (merge with persisted `customCommands`) so `/help` and the Telegram menu never drift
-- [ ] T015 [US1] Intercept `"/..."` in `ChatVM.handleMessageSend` in `app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt:173-177` before `chatService.sendMessage` (in-app `SlashCommandContext`, `reply` appends a synthetic message via ChatService); return early when handled; fall through to `sendMessage` only after the dispatcher emitted the unknown-command reply
-- [ ] T016 [US1] Wire registry + dispatcher + `SlashCommandLog` into `app/src/main/java/me/rerere/rikkahub/di/CommandModule.kt`
-- [ ] T017 [US1] Add localized command descriptions, `/help` header, and `unknown_command` strings to `app/src/main/res/values*/strings.xml` in all 7 locales (en, zh-CN, zh-TW, ja, ko, ru, ar)
+- [X] T007 [P] [US1] Create `SlashCommand.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommand.kt` (data class + `SlashCommandSource`/`SlashCommandArgSpec`/`SlashCommandApprovalHint` enums + sealed `SlashCommandResult` Handled/Ignored)
+- [X] T008 [P] [US1] Create `SlashCommandContext.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandContext.kt` (surface-agnostic context + read-only `SlashCommandServices` bundle: ChatService, SettingsStore, MemoryRepository, LessonRepository, SkillManager, ConversationRepository)
+- [X] T009 [US1] Implement `SlashCommandRegistry` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandRegistry.kt` (register core at construction, `commands()` snapshot, `findByToken`, `registerSkillCommands` deriving from `SkillManager.listSkills()` at dispatch time, `activeSkillNameFor`, `collisionFlags`; core-wins + first-installed-wins, FR-005)
+- [X] T010 [US1] Implement `SlashCommandDispatcher` in `app/src/main/java/me/rerere/rikkahub/data/command/SlashCommandDispatcher.kt` (parse `/cmd@botname arg`, dispatch, unknown → localized `unknown_command` pointing to `/help`, return `true`; log to existing `SlashCommandLog`)
+- [X] T011 [P] [US1] Implement `UndoHandler.kt` in `app/src/main/java/me/rerere/rikkahub/data/command/UndoHandler.kt` (best-effort shallow `/undo`: remove the last user+assistant message node pair of `context.conversationId` via MessageNodeDAO/ChatService, refresh FTS via `MessageFtsManager.indexConversation`, reply "nothing to undo" when history empty)
+- [X] T012 [US1] Register the core command handlers in `SlashCommandRegistry.kt` reusing existing service methods: `/new` `/clear` (`handleResetCommand`), `/stop` `/cancel` (`handleStopCommand`), `/help` (render from registry), `/model` (`handleModelCommand`/`setChatModel`), `/skills` (SkillManager.listSkills), `/memory` (MemoryRepository effective scope), `/doctor` (`handleDoctorCommand`), `/undo` (T011)
+- [X] T013 [US1] Replace the hard-coded `handleBuiltInCommand` `when` in `app/src/main/java/me/rerere/rikkahub/service/TelegramCommandHandlers.kt:49-80` with `SlashCommandDispatcher.dispatch` + a Telegram `SlashCommandContext` adapter (reply → `bot.sendMessage`); keep the whitelist gate (`TelegramBotService.kt:580-589`) running first
+- [X] T014 [US1] Derive `BUILT_IN_COMMANDS` in `app/src/main/java/me/rerere/rikkahub/service/TelegramBotService.kt:2144-2154` from `registry.commands()` and auto-sync `setMyCommands` (merge with persisted `customCommands`) so `/help` and the Telegram menu never drift
+- [X] T015 [US1] Intercept `"/..."` in `ChatVM.handleMessageSend` in `app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt:173-177` before `chatService.sendMessage` (in-app `SlashCommandContext`, `reply` appends a synthetic message via ChatService); return early when handled; fall through to `sendMessage` only after the dispatcher emitted the unknown-command reply
+- [X] T016 [US1] Wire registry + dispatcher + `SlashCommandLog` into `app/src/main/java/me/rerere/rikkahub/di/CommandModule.kt`
+- [X] T017 [US1] Add localized command descriptions, `/help` header, and `unknown_command` strings to `app/src/main/res/values*/strings.xml` in all 7 locales (en, zh-CN, zh-TW, ja, ko, ru, ar)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Side-effecting commands route through `ToolApprovalDefaults.ALWAYS_ASK` + `HardlineCommandGuard` (FR-007/FR-008) — verified by quickstart S3.
 

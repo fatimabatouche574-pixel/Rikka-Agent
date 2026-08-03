@@ -18,22 +18,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.data.command.SlashCommandContext
+import me.rerere.rikkahub.data.command.SlashCommandDispatcher
+import me.rerere.rikkahub.data.command.SlashCommandServices
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.getAssistantById
+import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.data.model.NodeFavoriteTarget
+import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FavoriteRepository
+import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
@@ -54,6 +63,9 @@ class ChatVM(
     val updateChecker: UpdateChecker,
     private val filesManager: FilesManager,
     private val favoriteRepository: FavoriteRepository,
+    private val slashCommandDispatcher: SlashCommandDispatcher,
+    private val memoryRepository: MemoryRepository,
+    private val skillManager: SkillManager,
 ) : ViewModel() {
     private val _conversationId: Uuid = Uuid.parse(id)
     val conversation: StateFlow<Conversation> = chatService.getConversationFlow(_conversationId)
@@ -173,7 +185,84 @@ class ChatVM(
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
+        // Phase 3 (US1) — slash-command interception. A lone "/..." text routes through the
+        // same SlashCommandDispatcher the Telegram bot uses, so one handler body runs on both
+        // surfaces (FR-003). Handled commands (including unknown → "try /help") never reach the
+        // LLM; only a handler that explicitly returns Ignored falls through to the model.
+        val singleSlashText = if (content.size == 1) {
+            (content.first() as? UIMessagePart.Text)?.text?.trim()
+        } else null
+        if (answer && singleSlashText?.startsWith("/") == true) {
+            viewModelScope.launch {
+                val replies = mutableListOf<String>()
+                val handled = slashCommandDispatcher.dispatch(
+                    singleSlashText,
+                    buildSlashCommandContext(singleSlashText, replies),
+                )
+                if (handled) {
+                    appendSlashCommandResult(_conversationId, content, replies)
+                } else {
+                    // Handler declined (rare) — run the normal pipeline.
+                    chatService.sendMessage(_conversationId, content, answer)
+                }
+            }
+            return
+        }
+
         chatService.sendMessage(_conversationId, content, answer)
+    }
+
+    /**
+     * In-app [SlashCommandContext]: handler replies are buffered into [replies], then committed
+     * to the conversation as synthetic assistant messages right after the user's command text —
+     * so history reads "user: /help" then "assistant: <help output>" in the correct order.
+     */
+    private fun buildSlashCommandContext(
+        arg: String,
+        replies: MutableList<String>,
+    ): SlashCommandContext {
+        val current = conversation.value
+        val settings = settingsStore.settingsFlow.value
+        val assistant = settings.getAssistantById(current.assistantId)
+            ?: settings.getCurrentAssistant()
+
+        // Refresh skill-contributed commands from this assistant's enabled skills so a newly
+        // enabled skill's commands are live immediately (FR-005).
+        slashCommandDispatcher.refreshSkillCommands(assistant.enabledSkills.toList())
+
+        return SlashCommandContext(
+            assistantId = current.assistantId.toString(),
+            conversationId = _conversationId,
+            reply = { text, _ -> replies += text },
+            services = SlashCommandServices(
+                chatService = chatService,
+                settingsStore = settingsStore,
+                memoryRepository = memoryRepository,
+                skillManager = skillManager,
+                conversationRepository = conversationRepo,
+            ),
+            arg = arg,
+        )
+    }
+
+    private suspend fun appendSlashCommandResult(
+        conversationId: Uuid,
+        userContent: List<UIMessagePart>,
+        replies: List<String>,
+    ) {
+        val current = chatService.getConversationFlow(conversationId).value
+        val nodes = current.messageNodes.toMutableList()
+        nodes += UIMessage(
+            role = MessageRole.USER,
+            parts = userContent,
+        ).toMessageNode()
+        replies.forEach { text ->
+            nodes += UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts = listOf(UIMessagePart.Text(text)),
+            ).toMessageNode()
+        }
+        chatService.saveConversation(conversationId, current.copy(messageNodes = nodes))
     }
 
     fun handleMessageEdit(parts: List<UIMessagePart>, messageId: Uuid) {

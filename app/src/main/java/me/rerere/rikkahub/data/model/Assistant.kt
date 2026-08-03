@@ -67,6 +67,11 @@ data class Assistant(
     val fastPathRouterEnabled: Boolean = false,
     val allowConversationSystemPrompt: Boolean = false, // 允许对话单独重写 system prompt
     val allowConversationPromptInjection: Boolean = false, // 允许对话单独绑定提示词注入
+    // Phase 17 — agent self-improvement. Additive DataStore fields (serialization
+    // defaults keep existing stored JSON backward compatible; no Room migration).
+    val enableSessionRecall: Boolean = false,          // register conversation_search + recent_chats tools
+    val enableLessons: Boolean = false,                // lesson capture on failure + lesson injection
+    val enableSkillSelfImprovement: Boolean = false,   // agent may offer to write a procedure skill
 )
 
 @Serializable

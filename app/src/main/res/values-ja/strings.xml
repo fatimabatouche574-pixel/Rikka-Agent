@@ -1808,5 +1808,31 @@ mDNSアドレス: .localホスト名を使用し、IPを知らなくても同じ
   <string name="chat_page_delete_folder_generating">フォルダ内の一部の会話がまだ生成中です。削除する前にそれらを停止してください。</string>
   <string name="setting_display_page_tts_read_outside_brackets_title">TTS 括弧内を読み上げない</string>
   <string name="setting_display_page_tts_read_outside_brackets_desc">有効にすると、TTS は括弧内の内容を読み上げません</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">不明なコマンドです — /help を試してください。</string>
+  <string name="slash_command_help_header">コマンド</string>
+  <string name="slash_command_fresh_conversation">新しい会話を開始しました。</string>
+  <string name="slash_command_stopped">生成を停止しました。</string>
+  <string name="slash_command_undo_nothing">元に戻すものがありません。</string>
+  <string name="slash_command_undo_done">最後のやり取りを元に戻しました。</string>
+  <string name="slash_command_current_model">現在のモデル：%1$s</string>
+  <string name="slash_command_switched_model">%1$s に切り替えました。</string>
+  <string name="slash_command_model_usage">使い方：/model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">「%1$s」に一致するモデルはありません。</string>
+  <string name="slash_command_no_chat_models">チャットモデルが設定されていません。</string>
+  <string name="slash_command_no_skills">このアシスタントで有効なスキルはありません。</string>
+  <string name="slash_command_no_memory">このスコープには保存されたメモリがありません。</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — 診断レポート</string>
+  <string name="slash_cmd_new">新しい会話を開始（履歴をクリア）</string>
+  <string name="slash_cmd_clear">現在の会話をクリア</string>
+  <string name="slash_cmd_stop">現在の生成を直ちにキャンセル</string>
+  <string name="slash_cmd_cancel">現在の生成をキャンセル</string>
+  <string name="slash_cmd_help">すべてのスラッシュコマンドを一覧表示</string>
+  <string name="slash_cmd_model">チャットモデルの表示/切り替え。使い方：/model [name]</string>
+  <string name="slash_cmd_skills">有効なスキルを一覧表示</string>
+  <string name="slash_cmd_memory">有効スコープの保存済みメモリを表示</string>
+  <string name="slash_cmd_doctor">アプリ診断を実行 — 権限、サービス、DB、ネットワーク</string>
+  <string name="slash_cmd_undo">最後のやり取りを元に戻す</string>
 </resources>
 

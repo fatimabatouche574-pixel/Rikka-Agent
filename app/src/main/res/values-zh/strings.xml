@@ -1811,5 +1811,31 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="chat_page_folder_add">新建</string>
   <string name="chat_page_delete_folder_confirm">删除文件夹 "%1$s"？其中的对话不会被删除，只会从文件夹中移除。</string>
   <string name="chat_page_delete_folder_generating">此文件夹中有对话仍在生成中，请停止后再删除。</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">未知命令 — 试试 /help。</string>
+  <string name="slash_command_help_header">命令</string>
+  <string name="slash_command_fresh_conversation">已开始新会话。</string>
+  <string name="slash_command_stopped">已停止生成。</string>
+  <string name="slash_command_undo_nothing">没有可撤销的内容。</string>
+  <string name="slash_command_undo_done">已撤销上一次对话。</string>
+  <string name="slash_command_current_model">当前模型：%1$s</string>
+  <string name="slash_command_switched_model">已切换到 %1$s。</string>
+  <string name="slash_command_model_usage">用法：/model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">没有匹配\"%1$s\"的模型。</string>
+  <string name="slash_command_no_chat_models">未配置聊天模型。</string>
+  <string name="slash_command_no_skills">此助手未启用技能。</string>
+  <string name="slash_command_no_memory">当前范围内没有存储的记忆。</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — 诊断报告</string>
+  <string name="slash_cmd_new">开始新会话（清除历史）</string>
+  <string name="slash_cmd_clear">清除当前会话</string>
+  <string name="slash_cmd_stop">立即取消当前生成</string>
+  <string name="slash_cmd_cancel">取消当前生成</string>
+  <string name="slash_cmd_help">列出所有斜杠命令</string>
+  <string name="slash_cmd_model">显示或切换聊天模型。用法：/model [name]</string>
+  <string name="slash_cmd_skills">列出已启用的技能</string>
+  <string name="slash_cmd_memory">显示有效范围内的已存记忆</string>
+  <string name="slash_cmd_doctor">运行应用诊断 — 权限、服务、数据库、网络</string>
+  <string name="slash_cmd_undo">撤销上一次对话</string>
 </resources>
 

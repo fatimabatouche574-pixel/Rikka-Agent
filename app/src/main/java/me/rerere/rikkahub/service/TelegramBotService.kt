@@ -79,6 +79,13 @@ class TelegramBotService : Service() {
     internal val settingsStore: SettingsStore by inject()
     internal val doctorChecks: me.rerere.rikkahub.ui.pages.setting.doctor.DoctorChecks by inject()
     internal val agentRunRepo: me.rerere.rikkahub.data.agentrun.AgentRunRepository by inject()
+    // Phase 17 (US1) — the shared slash-command registry + dispatcher. Both the Telegram
+    // surface and the in-app chat dispatch through the same SlashCommandDispatcher so the
+    // same handler body runs on both surfaces (FR-003).
+    internal val slashCommandDispatcher: me.rerere.rikkahub.data.command.SlashCommandDispatcher by inject()
+    internal val slashCommandRegistry: me.rerere.rikkahub.data.command.SlashCommandRegistry by inject()
+    internal val memoryRepository: me.rerere.rikkahub.data.repository.MemoryRepository by inject()
+    internal val skillManager: me.rerere.rikkahub.data.files.SkillManager by inject()
     // Phase 24 — shared long-poll stall tracker. The poll loop stamps it on every
     // getUpdates; the stall checker reads it; DoctorChecks reads it.
     private val pollStallTracker: me.rerere.rikkahub.data.telegram.TelegramPollStallTracker by inject()
@@ -2134,8 +2141,12 @@ class TelegramBotService : Service() {
         }
 
         /**
-         * The single source of truth for the bot's built-in slash-command menu. Each entry
-         * is (command-without-slash, description shown in Telegram's autocomplete menu).
+         * The Telegram-only built-in commands that predate the shared slash-command registry.
+         * The canonical Telegram menu is derived at runtime from the registry via
+         * [me.rerere.rikkahub.service.TelegramCommandHandlers.canonicalTelegramCommands]
+         * (the registry is the single source of truth — FR-001), with these entries appended
+         * for commands that have no registry equivalent. Each entry is
+         * (command-without-slash, description shown in Telegram's autocomplete menu).
          * Order matches what the user sees when they tap "/" in the chat.
          *
          * Telegram caps each description at 256 chars and the command at 32 chars; keep

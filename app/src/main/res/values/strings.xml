@@ -1912,4 +1912,30 @@
   <string name="chat_page_folder_add">New</string>
   <string name="chat_page_delete_folder_confirm">Delete folder "%1$s"? Conversations inside will not be deleted, only removed from the folder.</string>
   <string name="chat_page_delete_folder_generating">Some conversations in this folder are still generating. Please stop them before deleting.</string>
+
+  <!-- Phase 17: Slash commands (US1) -->
+  <string name="slash_command_unknown">Unknown command — try /help.</string>
+  <string name="slash_command_help_header">Commands</string>
+  <string name="slash_command_fresh_conversation">Fresh conversation started.</string>
+  <string name="slash_command_stopped">Generation stopped.</string>
+  <string name="slash_command_undo_nothing">Nothing to undo.</string>
+  <string name="slash_command_undo_done">Undid the last exchange.</string>
+  <string name="slash_command_current_model">Current model: %1$s</string>
+  <string name="slash_command_switched_model">Switched to %1$s.</string>
+  <string name="slash_command_model_usage">Usage: /model &lt;name&gt;</string>
+  <string name="slash_command_no_model_match">No model matches \"%1$s\".</string>
+  <string name="slash_command_no_chat_models">No chat models configured.</string>
+  <string name="slash_command_no_skills">No skills enabled for this assistant.</string>
+  <string name="slash_command_no_memory">No memory stored for this scope.</string>
+  <string name="slash_command_doctor_header">RikkaHub agent — diagnostic report</string>
+  <string name="slash_cmd_new">Start a fresh conversation (clears history)</string>
+  <string name="slash_cmd_clear">Clear the current conversation</string>
+  <string name="slash_cmd_stop">Cancel the current generation immediately</string>
+  <string name="slash_cmd_cancel">Cancel the current generation</string>
+  <string name="slash_cmd_help">List every slash command</string>
+  <string name="slash_cmd_model">Show or switch the chat model. Usage: /model [name]</string>
+  <string name="slash_cmd_skills">List enabled skills</string>
+  <string name="slash_cmd_memory">Show stored memory for the effective scope</string>
+  <string name="slash_cmd_doctor">Run app diagnostics — perms, services, DB, network</string>
+  <string name="slash_cmd_undo">Undo the last exchange</string>
 </resources>

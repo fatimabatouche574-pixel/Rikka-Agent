@@ -45,6 +45,15 @@ import kotlin.uuid.Uuid
  * Dispatch a built-in slash command. Returns true when the message was handled by the
  * app (no LLM round-trip), false if the command is unknown and should fall through to
  * the LLM. Built-in commands NEVER spend tokens.
+ *
+ * Telegram-only commands with bespoke interactive behavior (inline-keyboard pickers, the
+ * chat-mapping lifecycle, flood-safe status) stay on their dedicated handlers — the shared
+ * registry handlers can't replicate the per-chat mutex release, stale-approval keyboard
+ * cleanup, or the /model picker. Everything else — the remaining registry commands
+ * (/skills /memory /undo …), skill-contributed commands, and any unknown "/..." — dispatches
+ * through the SHARED [me.rerere.rikkahub.data.command.SlashCommandDispatcher] so both
+ * surfaces behave identically (FR-003). Unknown tokens get the localized "try /help" reply
+ * and never fall through to the LLM (FR-006).
  */
 internal suspend fun TelegramBotService.handleBuiltInCommand(
     cfg: me.rerere.rikkahub.data.telegram.TelegramBotConfig,
@@ -57,7 +66,7 @@ internal suspend fun TelegramBotService.handleBuiltInCommand(
     val cmd = tokens[0].lowercase()
     val arg = tokens.getOrNull(1)?.trim().orEmpty()
 
-    val handled = when (cmd) {
+    val telegramHandled = when (cmd) {
         "/start" -> { sendStart(m.chatId); true }
         "/help", "/?" -> { sendHelp(m.chatId); true }
         "/new", "/reset", "/clear" -> { handleResetCommand(m.chatId); true }
@@ -69,14 +78,59 @@ internal suspend fun TelegramBotService.handleBuiltInCommand(
         "/stream" -> { handleStreamCommand(m.chatId, arg); true }
         else -> false
     }
-    if (handled) {
+    if (telegramHandled) {
         // Record so the next inbound user message includes this command in the LLM
         // context preamble. The model needs to know /model X switched its identity, /new
         // wiped its history, etc.
         val display = if (arg.isBlank()) cmd else "$cmd $arg"
         SlashCommandLog.record(m.chatId, display)
+        return true
     }
-    return handled
+
+    // Not a Telegram-only command — hand the input to the shared registry dispatcher.
+    return slashCommandDispatcher.dispatch(raw, buildSlashCommandContext(m, arg))
+}
+
+/**
+ * Telegram [me.rerere.rikkahub.data.command.SlashCommandContext] adapter: replies go to the
+ * bot (HTML-escaped when the handler marks markdown), the conversation resolves to the chat's
+ * mapped conversation (a throwaway id when no mapping exists yet — /undo then correctly reports
+ * "nothing to undo"), and skill commands are re-derived for the current assistant.
+ */
+private suspend fun TelegramBotService.buildSlashCommandContext(
+    m: TelegramIncomingMessage,
+    arg: String,
+): me.rerere.rikkahub.data.command.SlashCommandContext {
+    val mapping = runCatching { chatRepo.getByChatId(m.chatId) }.getOrNull()
+    val conversationId = mapping?.let {
+        runCatching { Uuid.parse(it.conversationId) }.getOrNull()
+    } ?: Uuid.random()
+    val settings = settingsStore.settingsFlow.value
+    val assistant = settings.getCurrentAssistant()
+
+    // Re-derive skill-contributed commands so a skill enabled mid-session contributes its
+    // commands immediately (FR-005).
+    slashCommandRegistry.registerSkillCommands(assistant.enabledSkills.toList())
+
+    return me.rerere.rikkahub.data.command.SlashCommandContext(
+        assistantId = assistant.id.toString(),
+        conversationId = conversationId,
+        reply = { text, markdown ->
+            val body = if (markdown) TelegramHtmlRenderer.escape(text) else text
+            try {
+                client.sendMessage(m.chatId, body, parseMode = if (markdown) PARSE_MODE_HTML else null)
+            } catch (_: Throwable) {}
+        },
+        services = me.rerere.rikkahub.data.command.SlashCommandServices(
+            chatService = chatService,
+            settingsStore = settingsStore,
+            memoryRepository = memoryRepository,
+            skillManager = skillManager,
+            conversationRepository = conversationRepo,
+        ),
+        telegramChatId = m.chatId,
+        arg = arg,
+    )
 }
 
 internal suspend fun TelegramBotService.sendStart(chatId: Long) {
@@ -108,11 +162,16 @@ internal suspend fun TelegramBotService.sendHelp(chatId: Long) {
         "ratelimit" to "⚡",
         "doctor" to "🩺",
         "stream" to "🖼️",
+        "skills" to "🧩",
+        "memory" to "🧠",
+        "undo" to "↩️",
+        "clear" to "🗑️",
+        "cancel" to "✖️",
     )
     val msg = buildString {
         appendLine("📖 Built-in commands (handled by the app, no LLM cost):")
         appendLine()
-        BUILT_IN_COMMANDS.forEach { (c, d) ->
+        canonicalTelegramCommands().forEach { (c, d) ->
             val icon = icons[c] ?: "•"
             appendLine("$icon /$c — $d")
         }
@@ -120,6 +179,23 @@ internal suspend fun TelegramBotService.sendHelp(chatId: Long) {
         append("Anything else is sent to the model as usual.")
     }
     try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
+}
+
+/**
+ * The canonical built-in command list for the Telegram menu + /help, derived from the shared
+ * slash-command registry (the single source of truth, FR-001/FR-004) plus the Telegram-only
+ * commands that predate the registry (/start /status /ratelimit /stream). Registry entries win
+ * on name collisions so the Telegram menu and in-app /help never drift.
+ */
+private suspend fun TelegramBotService.canonicalTelegramCommands(): List<Pair<String, String>> {
+    val canonical = LinkedHashMap<String, String>()
+    slashCommandRegistry.commands().forEach { cmd ->
+        canonical[cmd.name.removePrefix("/")] = cmd.description
+    }
+    BUILT_IN_COMMANDS.forEach { (name, desc) ->
+        if (name !in canonical) canonical[name] = desc
+    }
+    return canonical.toList()
 }
 
 /**
@@ -763,12 +839,13 @@ internal suspend fun TelegramBotService.handleStreamCommand(chatId: Long, arg: S
 internal suspend fun TelegramBotService.registerBuiltInCommandsWithTelegram() {
     try {
         val custom = try { prefs.current().customCommands } catch (_: Throwable) { emptyList() }
-        val merged = BUILT_IN_COMMANDS + custom
+        val canonical = canonicalTelegramCommands()
+        val merged = canonical + custom
         val ok = client.setMyCommands(merged)
         Log.i(
             TAG,
             "registerBuiltInCommandsWithTelegram: setMyCommands ok=$ok " +
-                "(builtins=${BUILT_IN_COMMANDS.size}, custom=${custom.size})"
+                "(builtins=${canonical.size}, custom=${custom.size})"
         )
     } catch (e: Throwable) {
         Log.w(TAG, "registerBuiltInCommandsWithTelegram failed", e)
