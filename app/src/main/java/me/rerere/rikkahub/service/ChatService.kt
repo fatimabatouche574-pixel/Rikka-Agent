@@ -939,7 +939,7 @@ class ChatService(
                         // English+digits would produce an invalid `mcp__<name>__tool`
                         // surface, so surface it as an error rather than emit a tool the
                         // model can't address.
-                        val invalidNames = allTools
+            val invalidNames = allTools
                             .map { it.second }
                             .distinct()
                             .filter { name -> name.isEmpty() || !name.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' } }
@@ -966,8 +966,8 @@ class ChatService(
                         // ^[a-zA-Z0-9_-]+$ limit. The execute lambda below still calls callTool
                         // with the REAL tool.name, since the namespacing exists only on the
                         // model-facing surface.
-                        val serverSlug = serverId.toString().take(8).replace("-", "")
-                        val mcpToolName = "mcp__" + serverSlug + "_" + serverName + "__" + tool.name
+            val serverSlug = serverId.toString().take(8).replace("-", "")
+            val mcpToolName = "mcp__" + serverSlug + "_" + serverName + "__" + tool.name
                         add(
                             Tool(
                                 name = mcpToolName,
@@ -1013,7 +1013,7 @@ class ChatService(
             }.collect { chunk ->
                 when (chunk) {
                     is GenerationChunk.Messages -> {
-                        val updatedConversation = getConversationFlow(conversationId).value
+            val updatedConversation = getConversationFlow(conversationId).value
                             .updateCurrentMessages(chunk.messages)
                         updateConversation(conversationId, updatedConversation)
 
@@ -1025,7 +1025,7 @@ class ChatService(
                         // interrupted_unknown_outcome). Without this, the marker stays in
                         // memory only and replay can't distinguish "freshly approved,
                         // never tried" from "interrupted mid-execute" → silent re-run.
-                        val needsImmediatePersist = chunk.messages.lastOrNull()?.parts?.any { p ->
+            val needsImmediatePersist = chunk.messages.lastOrNull()?.parts?.any { p ->
                             p is UIMessagePart.Tool &&
                                 p.executionStartedAt != null &&
                                 p.output.isEmpty() &&
@@ -1072,15 +1072,15 @@ class ChatService(
             if (it !is kotlinx.coroutines.CancellationException && assistant.enableLessons) {
                 runCatching {
                     launchWithConversationReference(conversationId) {
-                        val recentUserText = getConversationFlow(conversationId).value
+            val recentUserText = getConversationFlow(conversationId).value
                             .currentMessages
                             .lastOrNull { msg -> msg.role == me.rerere.ai.core.MessageRole.USER }
                             ?.parts
                             ?.filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
                             ?.joinToString(separator = "") { p -> p.text }
                             ?.ifBlank { "(untitled task)" }
-                            ?: "(untitled task)"
-                        val errorDetail = "${it.javaClass.name}: ${it.message}"
+                ?: "(untitled task)"
+            val errorDetail = "${it.javaClass.name}: ${it.message}"
                         lessonCapture.onTaskFailure(
                             assistant = assistant,
                             conversationId = conversationId,
@@ -1235,7 +1235,11 @@ class ChatService(
 
         runCatching {
             val settings = settingsStore.settingsFlow.first()
-            val model = settings.findModelById(settings.titleModelId, fallback = settings.fastModelId) ?: return
+            val assistantModelId = settings.getAssistantById(conversation.assistantId)?.chatModelId
+            val model = settings.findModelById(settings.titleModelId)
+                ?: settings.findModelById(settings.fastModelId)
+                ?: assistantModelId?.let { settings.findModelById(it) }
+                ?: return
             val provider = model.findProvider(settings.providers) ?: return
             // Same defence as handleLlmTurn: don't burn tokens on a disabled provider.
             if (!provider.enabled) return
@@ -1961,7 +1965,7 @@ class ChatService(
             val updatedNodes = currentConversation.messageNodes.map { node ->
                 node.copy(
                     messages = node.messages.map { msg ->
-                        val updated = msg.finishPendingTools(::cancelToolByUser)
+            val updated = msg.finishPendingTools(::cancelToolByUser)
                         if (updated !== msg) changed = true
                         updated
                     }
