@@ -181,6 +181,22 @@ val DEFAULT_PROVIDERS = listOf(
         )
     ),
     ProviderSetting.OpenAI(
+        id = Uuid.parse("23377418-d523-4bf8-8bfe-49247b4fa62c"),
+        name = "OpenCode Go",
+        baseUrl = "https://opencode.ai/zen/go/v1",
+        apiKey = "",
+        enabled = false,
+        builtIn = true,
+    ),
+    ProviderSetting.OpenAI(
+        id = Uuid.parse("edf99bb8-4ea4-4af5-be17-83d4e26304f4"),
+        name = "OpenCode Zen",
+        baseUrl = "https://opencode.ai/zen/v1",
+        apiKey = "",
+        enabled = false,
+        builtIn = true,
+    ),
+    ProviderSetting.OpenAI(
         id = Uuid.parse("d5734028-d39b-4d41-9841-fd648d65440e"),
         name = "OpenRouter",
         baseUrl = "https://openrouter.ai/api/v1",

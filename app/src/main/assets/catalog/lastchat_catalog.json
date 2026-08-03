@@ -1134,6 +1134,23 @@
       "reasoning_content_replay_mode": "auto"
     },
     {
+      "id": "edf99bb8-4ea4-4af5-be17-83d4e26304f4",
+      "name": "OpenCode Zen",
+      "description": "OpenCode Zen API provider.",
+      "type": "openai",
+      "base_url": "https://opencode.ai/zen/v1",
+      "chat_completions_path": "/chat/completions",
+      "use_response_api": false,
+      "balance_option": {},
+      "icon": "icons/opencode.svg",
+      "preset": true,
+      "signup_url": "https://opencode.ai",
+      "api_key_url": "https://opencode.ai",
+      "stream_options_mode": "auto",
+      "image_response_modalities_mode": "auto",
+      "reasoning_content_replay_mode": "auto"
+    },
+    {
       "id": "fb7b6165-8893-4cfc-82e0-26c6fd01d566",
       "name": "Command Code",
       "description": "Command Code API provider.",
