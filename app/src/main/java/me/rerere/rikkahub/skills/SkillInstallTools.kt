@@ -211,6 +211,32 @@ fun skillInstallFromTextTool(
         Newly-installed skills are auto-enabled for the calling assistant unless they
         previously existed and were disabled. Returns
         { ok, name, format, source_label, auto_enabled, auto_enabled_detail } on success.
+
+        Phase 22 / US5 — authoring a self-improvement procedure skill. When writing a NEW
+        skill from scratch you can declare `commands:` and `triggers:` in the YAML
+        frontmatter so the skill also contributes a slash command and is auto-loaded on
+        matching tasks. Author the body as a concise markdown playbook (numbered steps the
+        model can follow), not a transcript. Frontmatter shape:
+
+        ```
+        ---
+        name: backup-playbook
+        description: Steps to set up a local backup workflow.
+        triggers:
+          - backup
+          - "back up"
+          - restore
+        commands:
+          - /backup: Run the backup procedure skill
+        ---
+        # Backup playbook
+        1. ...
+        ```
+        Keep `commands:` entries in the form `/name: one-line-description`; invalid entries
+        are skipped. `triggers:` entries are keywords or regex patterns; a compiled regex
+        is matched as regex, anything else as a case-insensitive substring. Do NOT include
+        secrets or credentials in the body. The user must still approve this write — it is
+        NEVER auto-allowed.
     """.trimIndent().replace("\n", " "),
     parameters = {
         InputSchema.Obj(

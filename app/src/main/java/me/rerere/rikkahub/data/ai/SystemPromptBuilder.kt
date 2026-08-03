@@ -19,12 +19,13 @@ class SystemPromptBuilder {
     /**
      * Returns the system prompt split into `(stable, volatile)`.
      * - stable: assistant prompt + tool cost guidance + tool prompts.
-     * - volatile: memory + recent chats + per-call addendum.
+     * - volatile: memory + lessons + recent chats + per-call addendum.
      * Either may be blank.
      */
     fun buildSections(
         assistantPrompt: String,
         memoryPrompt: String = "",
+        lessonsPrompt: String = "",
         recentChatsPrompt: String = "",
         toolPrompts: List<String> = emptyList(),
         systemAddendum: String? = null,
@@ -43,6 +44,13 @@ class SystemPromptBuilder {
 
         val volatile = buildString {
             if (memoryPrompt.isNotBlank()) append(memoryPrompt)
+            // Phase 20 / US4 — the volatile lessons section sits between memory and recent
+            // chats so a freshly-recorded lesson reaches the model with the same prominence
+            // as memory while still staying inside the cache-busting block (FR-021).
+            if (lessonsPrompt.isNotBlank()) {
+                if (isNotEmpty()) appendLine()
+                append(lessonsPrompt)
+            }
             if (recentChatsPrompt.isNotBlank()) {
                 if (isNotEmpty()) appendLine()
                 append(recentChatsPrompt)
@@ -61,12 +69,13 @@ class SystemPromptBuilder {
     fun build(
         assistantPrompt: String,
         memoryPrompt: String = "",
+        lessonsPrompt: String = "",
         recentChatsPrompt: String = "",
         toolPrompts: List<String> = emptyList(),
         systemAddendum: String? = null,
     ): String {
         val (stable, volatile) = buildSections(
-            assistantPrompt, memoryPrompt, recentChatsPrompt, toolPrompts, systemAddendum
+            assistantPrompt, memoryPrompt, lessonsPrompt, recentChatsPrompt, toolPrompts, systemAddendum
         )
         return listOf(stable, volatile).filter { it.isNotBlank() }.joinToString("\n")
     }

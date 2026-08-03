@@ -248,6 +248,73 @@ private fun AssistantMemoryContent(
             )
         }
 
+        // Phase 19-22 / US3-US5 — self-improvement group: assistant toggles that turn the
+        // agent into something that grows over time. All three default OFF (tools start OFF,
+        // no telemetry); each is an additive DataStore field with a serialization default so
+        // existing stored assistants decode unchanged (FR-033).
+        CardGroup {
+            item(
+                headlineContent = { Text(stringResource(R.string.assistant_page_session_recall)) },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.assistant_page_session_recall_desc),
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.enableSessionRecall,
+                        onCheckedChange = {
+                            onUpdateAssistant(
+                                assistant.copy(
+                                    enableSessionRecall = it
+                                )
+                            )
+                        },
+                    )
+                }
+            )
+            item(
+                headlineContent = { Text(stringResource(R.string.assistant_page_lessons_toggle)) },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.assistant_page_lessons_toggle_desc),
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.enableLessons,
+                        onCheckedChange = {
+                            onUpdateAssistant(
+                                assistant.copy(
+                                    enableLessons = it
+                                )
+                            )
+                        },
+                    )
+                }
+            )
+            item(
+                headlineContent = { Text(stringResource(R.string.assistant_page_skill_self_improvement)) },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.assistant_page_skill_self_improvement_desc),
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.enableSkillSelfImprovement,
+                        onCheckedChange = {
+                            onUpdateAssistant(
+                                assistant.copy(
+                                    enableSkillSelfImprovement = it
+                                )
+                            )
+                        },
+                    )
+                }
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()

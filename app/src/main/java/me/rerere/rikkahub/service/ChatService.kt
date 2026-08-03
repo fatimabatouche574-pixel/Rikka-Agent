@@ -66,6 +66,7 @@ import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.LocalTools
 import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.createSkillTools
+import me.rerere.rikkahub.data.ai.tools.createConversationTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
@@ -155,6 +156,8 @@ class ChatService(
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
     private val memoryRepository: MemoryRepository,
+    private val lessonRepository: me.rerere.rikkahub.data.lesson.LessonRepository,
+    private val lessonCapture: me.rerere.rikkahub.data.lesson.LessonCapture,
     private val generationHandler: GenerationHandler,
     private val templateTransformer: TemplateTransformer,
     private val providerManager: ProviderManager,
@@ -872,6 +875,16 @@ class ChatService(
                 } else {
                     memoryRepository.getMemoriesOfAssistant(assistant.id.toString())
                 },
+                // Phase 20 / US4 — the on-device lessons list is loaded at the same call site
+                // as memory (per the contract) and gated behind `assistant.enableLessons`. The
+                // list passes straight through to GenerationHandler.generateInternal where it is
+                // rendered into the volatile prompt block via buildLessonsPrompt. Telegram
+                // funnels through the same sendMessage sink (FR-018).
+                lessons = if (assistant.enableLessons) {
+                    lessonRepository.lessonsFor(assistant.id.toString())
+                } else {
+                    emptyList()
+                },
                 inputTransformers = buildList {
                     addAll(inputTransformers)
                     add(templateTransformer)
@@ -904,6 +917,20 @@ class ChatService(
                                 enabledSkills = assistant.enabledSkills,
                                 allSkills = skillManager.listSkills(),
                                 skillManager = skillManager,
+                            )
+                        )
+                    }
+                    // Phase 19 / US3 — activate the dormant `ConversationTools`
+                    // (recent_chats + conversation_search over the existing FTS5 index)
+                    // only when the assistant opts in (assistant.enableSessionRecall). They
+                    // are read-only and require no approval (recall-contract §6); Telegram
+                    // funnels through the same `sendMessage` sink as the in-app chat, so the
+                    // tools are live on both surfaces under the same toggle (FR-018).
+                    if (assistant.enableSessionRecall) {
+                        addAll(
+                            createConversationTools(
+                                conversationRepo = conversationRepo,
+                                assistantId = assistant.id,
                             )
                         )
                     }
@@ -1031,6 +1058,42 @@ class ChatService(
                 Log.w(TAG, "handleMessageComplete: failure-path save failed", saveErr)
             }
 
+            // Phase 21 / US4 — Lesson capture on genuine terminal failure (FR-020/FR-024).
+            // This is the single consolidated hook for ALL terminal-failure paths:
+            // GenerationHandler step-catch (provider/parse error) rethrows here, and a
+            // tool-error envelope that escalates to a terminal turn failure also lands here.
+            // Cancellations (stopGeneration, user cancel) and denied approvals are filtered
+            // out before this hook — they rethrow CancellationException or are caught by the
+            // approval state machine and never reach onFailure (FR-024).
+            //
+            // Capture is fire-and-forget on a non-blocking scope so the user-visible error
+            // does not wait for the analysis LLM round-trip. The assistant toggle gates
+            // everything; LessonCapture short-circuits inside the hook when it is off.
+            if (it !is kotlinx.coroutines.CancellationException && assistant.enableLessons) {
+                runCatching {
+                    launchWithConversationReference(conversationId) {
+                        val recentUserText = getConversationFlow(conversationId).value
+                            .currentMessages
+                            .lastOrNull { msg -> msg.role == me.rerere.ai.core.MessageRole.USER }
+                            ?.parts
+                            ?.filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
+                            ?.joinToString(separator = "") { p -> p.text }
+                            ?.ifBlank { "(untitled task)" }
+                            ?: "(untitled task)"
+                        val errorDetail = "${it.javaClass.name}: ${it.message}"
+                        lessonCapture.onTaskFailure(
+                            assistant = assistant,
+                            conversationId = conversationId,
+                            errorDetail = errorDetail,
+                            taskSummary = recentUserText?.takeIf { it.isNotBlank() }
+                                ?: initialConversation.title.ifBlank { "(untitled task)" },
+                        )
+                    }
+                }.onFailure { captureErr ->
+                    Log.w(TAG, "handleMessageComplete: lesson capture failed", captureErr)
+                }
+            }
+
             it.printStackTrace()
             addError(it, conversationId, title = context.getString(R.string.error_title_generation))
             Logging.log(TAG, "handleMessageComplete: $it")
@@ -1044,6 +1107,21 @@ class ChatService(
             }
             launchWithConversationReference(conversationId) {
                 generateSuggestion(conversationId, finalConversation)
+            }
+
+            // Phase 22 / US5 — self-improving skills success-offer hook (T045, FR-026 /
+            // FR-030). After a *successful multi-step* task and when the assistant has opted
+            // in (`enableSkillSelfImprovement`), offer to save a procedure skill by appending
+            // a single localized suggestion chip to the conversation. The chip is plain text;
+            // the actual write still requires a `skill_install_from_text` tool call which is
+            // ALWAYS_ASK + NO_ALWAYS_ALLOW (FR-008) — the offer never auto-writes. The
+            // multi-step heuristic counts executed tool calls in the just-completed turn
+            // (tool calls > 0 are a strong signal of a *procedure* worth capturing vs. a
+            // one-shot chat reply). Threshold is tuned to >= 3 (implementation heuristic
+            // per contract §4). Fire-and-forget; never blocks the chat surface.
+            launchWithConversationReference(conversationId) {
+                runCatching { maybeOfferSkillSelfImprovement(conversationId, assistant) }
+                    .onFailure { Log.w(TAG, "skill self-improvement offer failed", it) }
             }
         }
     }
@@ -1245,6 +1323,43 @@ class ChatService(
             // user-facing error stream (mirrors the generateTitle failure handling).
             Log.w(TAG, "generateSuggestion failed", it)
         }
+    }
+
+    /**
+     * Phase 22 / US5 — success-offer heuristic (T045). After a successful multi-step task
+     * with `assistant.enableSkillSelfImprovement == true`, append a single localized
+     * suggestion chip offering to save the procedure as a skill. Counts executed tool
+     * calls in the just-completed conversation turn as the "multi-step" signal. The offer
+     * is plain suggestion text — no automatic write; the actual skill write requires a
+     * `skill_install_from_text` tool call which is ALWAYS_ASK + NO_ALWAYS_ALLOW (FR-008 /
+     * FR-030). The chip is appended only once per successful turn and is idempotent: a
+     * re-entry (e.g. from a regenerated turn) — re-derives the chip fresh. No network use;
+     * pure-local computation.
+     */
+    private suspend fun maybeOfferSkillSelfImprovement(
+        conversationId: Uuid,
+        assistant: Assistant,
+    ) {
+        if (!assistant.enableSkillSelfImprovement) return
+        val conversation = getConversationFlow(conversationId).value
+        // Multi-step threshold heuristic — count executed tool parts in the assistant
+        // messages of THIS conversation (tool-call count >= MIN signals a *procedure*
+        // worth capturing; a one-shot reply is not). Tuned at 3 — the threshold is
+        // documented as implementation-tunable in contracts §4.
+        val MIN_TOOL_CALLS_FOR_OFFER = 3
+        val executedToolCalls = conversation.currentMessages
+            .filter { it.role == me.rerere.ai.core.MessageRole.ASSISTANT }
+            .sumOf { msg -> msg.parts.count { p -> p is UIMessagePart.Tool && p.isExecuted } }
+        if (executedToolCalls < MIN_TOOL_CALLS_FOR_OFFER) return
+
+        val offer = context.getString(R.string.chat_skill_self_improvement_offer)
+        val existing = conversation.chatSuggestions
+        // Avoid stacking duplicates if the offer somehow already lives in the list.
+        if (offer in existing) return
+
+        val updated = (existing + offer).take(10)
+        val latest = conversationRepo.getConversationById(conversationId) ?: conversation
+        saveConversation(conversationId, latest.copy(chatSuggestions = updated))
     }
 
     // ---- 压缩对话历史 ----

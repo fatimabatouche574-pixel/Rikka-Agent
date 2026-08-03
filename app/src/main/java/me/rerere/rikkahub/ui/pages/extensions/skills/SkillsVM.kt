@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.rerere.rikkahub.data.command.SlashCommandRegistry
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
@@ -35,6 +36,7 @@ class SkillsVM(
     private val context: Context,
     private val skillManager: SkillManager,
     private val urlImporter: SkillUrlImporter,
+    private val commandRegistry: SlashCommandRegistry? = null,
 ) : ViewModel() {
 
     companion object {
@@ -43,6 +45,29 @@ class SkillsVM(
     }
     private val _skills = MutableStateFlow<List<SkillMetadata>>(emptyList())
     val skills = _skills.asStateFlow()
+
+    /**
+     * Phase 22 / US5 — skill-review warning badges. A skill name maps to the *strongest*
+     * flag that applies to it so [SkillsPage] can surface a single concise warning line
+     * under the matching [SkillCard]. Flags are recomputed whenever the skills list changes
+     * (install / delete / regenerate by `loadSkills`). Three flag kinds:
+     *
+     * - [SkillFlag.DuplicateName]: another installed skill already uses the same `name`.
+     *   First-installed (earlier in [SkillManager.listSkills] order) is treated as the
+     *   winner; every later duplicate is flagged for review. The agent-written path
+     *   (`skill_install_from_text`) lands in the existing skills directory, so a generated
+     *   skill that collides with an existing one is surfaced here for the user to rename /
+     *   delete (FR-027).
+     * - [SkillFlag.CoreCollision]: the skill declares a `/command:` entry that matches a
+     *   built-in core command — the built-in always wins, so the skill's command entry is
+     *   inert. Surfaced so the user can rename the skill's command (FR-029).
+     * - [SkillFlag.SkillCollision]: two or more enabled skills declare the same `/command:`
+     *   entry; the first-installed wins and the rest are flagged (collision policy per
+     *   `contracts/slash-command-registry.md` §6).
+     */
+    val skillFlags: kotlinx.coroutines.flow.StateFlow<Map<String, SkillFlag>> = _skills
+        .map { list -> computeFlags(list) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /**
      * Phase 19D — flow-derived snapshot of currently-installed skill names. The catalog
@@ -377,4 +402,63 @@ class SkillsVM(
             connection.disconnect()
         }
     }
+
+    /**
+     * Phase 22 / US5 — compute the strongest review-flag per skill (see [skillFlags]).
+     * Pure function over the supplied skills list (no I/O). Order matters: it mirrors
+     * [SkillManager.listSkills] ordering — first-installed-wins — so later duplicates and
+     * later-same-command losers are flagged. The [SlashCommandRegistry] supplies the core
+     * command tokens that always win over skills; if the registry is unavailable (test
+     * seam), core-collision detection is skipped.
+     */
+    private fun computeFlags(skills: List<SkillMetadata>): Map<String, SkillFlag> {
+        if (skills.isEmpty()) return emptyMap()
+        val result = mutableMapOf<String, SkillFlag>()
+        val seenNames = mutableSetOf<String>()
+        val claimedCommands = mutableMapOf<String, String>()  // /cmd -> owning skill
+        val coreTokens = runCatching { commandRegistry?.coreCommandTokens() }.getOrNull()
+            ?: emptySet()
+
+        for (skill in skills) {
+            // Duplicate-name check: the first occurrence keeps the name; later ones flagged.
+            if (skill.name in seenNames) {
+                result[skill.name] = SkillFlag.DuplicateName
+            }
+            seenNames.add(skill.name)
+
+            // Skill-vs-skill command collision pass — first-installed-wins.
+            for (entry in skill.commands) {
+                val token = entry.substringBefore(':').trim().lowercase()
+                if (token.isBlank() || !token.startsWith("/") || token in coreTokens) continue
+                val owner = claimedCommands[token]
+                if (owner != null && owner != skill.name) {
+                    result[skill.name] = SkillFlag.SkillCollision
+                } else if (owner == null) {
+                    claimedCommands[token] = skill.name
+                }
+            }
+
+            // Skill-vs-core pass (runs after the skill-vs-skill pass so CoreCollision, the
+            // stronger flag, always overwrites). A built-in /command shadows every skill
+            // that declares it — every such skill is flagged, not just the first.
+            for (entry in skill.commands) {
+                val token = entry.substringBefore(':').trim().lowercase()
+                if (token in coreTokens) {
+                    result[skill.name] = SkillFlag.CoreCollision
+                }
+            }
+        }
+        return result
+    }
+}
+
+/**
+ * Phase 22 / US5 — review-warning badges surfaced on a [SkillCard]. The order matters:
+ * [CoreCollision] > [SkillCollision] > [DuplicateName] in severity (the user benefits more
+ * from knowing their command is shadowed by a built-in than from a mere duplicate-name).
+ */
+enum class SkillFlag {
+    DuplicateName,
+    SkillCollision,
+    CoreCollision,
 }

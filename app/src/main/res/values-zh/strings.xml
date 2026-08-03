@@ -1837,5 +1837,29 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="slash_cmd_memory">显示有效范围内的已存记忆</string>
   <string name="slash_cmd_doctor">运行应用诊断 — 权限、服务、数据库、网络</string>
   <string name="slash_cmd_undo">撤销上一次对话</string>
+  <string name="setting_page_global_memory">全局记忆</string>
+  <string name="setting_page_global_memory_desc">共享给所有开启全局记忆的助手的记忆条目</string>
+  <string name="setting_page_lessons">从错误中学习</string>
+  <string name="setting_page_lessons_desc">查看并删除代理在过去任务失败后记录的经验教训</string>
+  <string name="global_memory_page_title">全局记忆</string>
+  <string name="global_memory_page_desc">这些条目对所有开启了「使用全局记忆」的助手共享。你可以在此直接添加，也可以让代理通过记忆工具添加——两者都会在下一次对话（应用或 Telegram 任一界面）中生效。</string>
+  <string name="global_memory_edit_title">编辑全局记忆</string>
+  <string name="global_memory_entries_label">条目</string>
+  <string name="global_memory_empty">暂无全局记忆。当代理判断某条事实值得跨助手回忆时，会自动存储到此。</string>
+  <string name="assistant_page_session_recall">会话回顾</string>
+  <string name="assistant_page_session_recall_desc">允许代理基于本机会话历史回答「我们之前做过什么」(recent_chats + conversation_search 工具)。</string>
+  <string name="assistant_page_lessons_toggle">从错误中学习</string>
+  <string name="assistant_page_lessons_toggle_desc">任务真正失败时，代理记录一条精简教训，并在后续对话中注入。已取消或被拒绝的任务永不记录。</string>
+  <string name="assistant_page_skill_self_improvement">自改进技能</string>
+  <string name="assistant_page_skill_self_improvement_desc">复杂任务成功后，代理可建议编写可复用的流程技能。写入需经过 skill_install_from_text 审批；产物可在技能列表中查看与编辑。</string>
+  <string name="lessons_page_title">经验教训</string>
+  <string name="lessons_page_desc">代理在任务真正失败后记录的教训。后续对话会注入这些教训，让代理避免重蹈覆辙。删除某条便会停止注入；关闭助手开关只停止新记录、不会删除已有教训。</string>
+  <string name="lessons_page_empty">尚无教训记录。让代理执行一个真正失败的任务（而非被取消），便会在此出现一条精简教训。</string>
+  <string name="lessons_page_delete">删除教训</string>
+  <string name="lessons_page_source_task_label">来源任务</string>
+  <string name="skills_page_skill_collision_warning">另一个技能也声明了同样的 /指令；已启用技能胜出。</string>
+  <string name="skills_page_skill_core_collision_warning">某个内置 /指令覆盖了此技能的指令；内置指令优先。</string>
+  <string name="skills_page_skill_duplicate_name">另一个技能已使用这个名字；请重命名避免混淆。</string>
+  <string name="chat_skill_self_improvement_offer">把这次流程保存为可复用的流程技能？</string>
 </resources>
 

@@ -287,6 +287,7 @@ class GenerationHandler(
         outputTransformers: List<OutputMessageTransformer> = emptyList(),
         assistant: Assistant,
         memories: List<AssistantMemory>? = null,
+        lessons: List<me.rerere.rikkahub.data.lesson.Lesson> = emptyList(),
         tools: List<Tool> = emptyList(),
         maxSteps: Int = 32,
         processingStatus: MutableStateFlow<String?> = MutableStateFlow(null),
@@ -435,6 +436,7 @@ class GenerationHandler(
                         provider = provider,
                         tools = toolsInternal,
                         memories = memories ?: emptyList(),
+                        lessons = lessons,
                         stream = assistant.streamOutput,
                         processingStatus = processingStatus,
                         conversationSystemPrompt = conversationSystemPrompt,
@@ -446,6 +448,17 @@ class GenerationHandler(
                     // CancellationException is honoured verbatim — stopGeneration has its
                     // own cancelToolByUser path that marks tools cancelled. We only need
                     // to handle non-cancel failures here.
+                    //
+                    // Phase 21 / US4 — Lesson capture (FR-020/FR-024) is NOT fired here. This
+                    // catch rethrows every non-cancellation throwable; the single consolidated
+                    // failure hook lives in ChatService.handleMessageComplete.onFailure,
+                    // which sees the rethrow as the terminal failure (see contracts/lesson-
+                    // store.md §3). Firing here would either block the user's error dialog
+                    // on the analysis LLM call OR fire twice (here + onFailure) with no benefit
+                    // — the repository dedup handles consolidation anyway, but we'd burn
+                    // tokens on duplicate analysis calls. CancellationException is also
+                    // excluded by onFailure, so the user-cancel / denied-approval paths
+                    // never record a lesson (FR-024).
                     if (t !is CancellationException) {
                         // Server 5xx, JSON parse failure, OOM during chunk-merge, etc. Without
                         // this transition, any tool already at Auto/Pending in the just-built
@@ -947,6 +960,7 @@ class GenerationHandler(
         provider: ProviderSetting,
         tools: List<Tool>,
         memories: List<AssistantMemory>,
+        lessons: List<me.rerere.rikkahub.data.lesson.Lesson> = emptyList(),
         stream: Boolean,
         processingStatus: MutableStateFlow<String?> = MutableStateFlow(null),
         conversationSystemPrompt: String? = null,
@@ -966,16 +980,24 @@ class GenerationHandler(
             val memoryPrompt = if (assistant.enableMemory) {
                 buildMemoryPrompt(memories = memories)
             } else ""
+            // Phase 20 / US4 — lessons are injected alongside memory when enableLessons is
+            // on; the call site (ChatService.kt:870-878) loads them from
+            // LessonRepository.lessonsFor(assistantId) at the same place memory is fetched.
+            val lessonsPrompt = if (assistant.enableLessons && lessons.isNotEmpty()) {
+                buildLessonsPrompt(lessons = lessons)
+            } else ""
             val recentChatsPrompt = if (assistant.enableRecentChatsReference) {
                 buildRecentChatsPrompt(assistant, conversationRepo)
             } else ""
             val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
-            // Split into stable (assistant + tools) and volatile (memory + recent chats +
-            // addendum) so prompt caching survives memory injection: the stable part is the
-            // cached prefix, the volatile part sits after it. See SystemPromptBuilder.
+            // Split into stable (assistant + tools) and volatile (memory + lessons + recent
+            // chats + addendum) so prompt caching survives memory/lessons injection: the
+            // stable part is the cached prefix, the volatile part sits after it. See
+            // SystemPromptBuilder.
             val (stableSystem, volatileSystem) = systemPromptBuilder.buildSections(
                 assistantPrompt = effectiveSystemPrompt,
                 memoryPrompt = memoryPrompt,
+                lessonsPrompt = lessonsPrompt,
                 recentChatsPrompt = recentChatsPrompt,
                 toolPrompts = toolPrompts,
                 systemAddendum = systemAddendum,

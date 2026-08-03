@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.di
 
 import android.content.Context
+import java.io.File
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.command.CoreCommandDeps
 import me.rerere.rikkahub.data.command.CoreCommandStrings
@@ -10,6 +11,8 @@ import me.rerere.rikkahub.data.command.SlashCommandRegistry
 import me.rerere.rikkahub.data.command.UndoHandler
 import me.rerere.rikkahub.data.command.registerCoreCommands
 import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.lesson.LessonCapture
+import me.rerere.rikkahub.data.lesson.LessonRepository
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.service.ChatService
@@ -18,7 +21,8 @@ import me.rerere.rikkahub.ui.pages.setting.doctor.DoctorChecks
 import org.koin.dsl.module
 
 /**
- * Phase 17 — slash-command registry/dispatcher + /undo + the localized core-command strings.
+ * Phase 17 / Phase 19 — slash-command registry/dispatcher + /undo + localized core-command
+ * strings, plus the US4 LessonRepository / LessonCapture bindings (T037).
  *
  * The registry is the single source of truth for command names/descriptions/handlers and is
  * shared by the in-app chat (ChatVM) and the Telegram bot (TelegramCommandHandlers) — the
@@ -31,6 +35,22 @@ val commandModule = module {
         SlashCommandLogger { chatId, display ->
             TelegramBotService.Companion.SlashCommandLog.record(chatId, display)
         }
+    }
+
+    // Phase 19 / US4 — on-device lesson store + capture. Atomic-write JSON files mirroring
+    // the SkillManager pattern; no Room migration (FR-033). `fileStorage dir` is
+    // filesDir/lessons (mkdir is handled lazily inside the repo).
+    single {
+        LessonRepository(
+            baseDir = File(get<Context>().filesDir, "lessons"),
+        )
+    }
+    single {
+        LessonCapture(
+            lessonRepository = get(),
+            settingsStore = get(),
+            providerManager = get(),
+        )
     }
 
     single {

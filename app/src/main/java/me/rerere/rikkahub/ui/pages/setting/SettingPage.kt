@@ -359,6 +359,18 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         },
                         headlineContent = { Text(stringResource(R.string.setting_page_chat_storage)) },
                     )
+                    item(
+                        onClick = { navController.navigate(Screen.GlobalMemory) },
+                        leadingContent = { Icon(HugeIcons.Book03, null) },
+                        supportingContent = { Text(stringResource(R.string.setting_page_global_memory_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_global_memory)) },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.Lessons) },
+                        leadingContent = { Icon(HugeIcons.Bookshelf01, null) },
+                        supportingContent = { Text(stringResource(R.string.setting_page_lessons_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_lessons)) },
+                    )
                 }
             }
 

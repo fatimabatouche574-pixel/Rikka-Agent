@@ -1938,4 +1938,33 @@
   <string name="slash_cmd_memory">Show stored memory for the effective scope</string>
   <string name="slash_cmd_doctor">Run app diagnostics — perms, services, DB, network</string>
   <string name="slash_cmd_undo">Undo the last exchange</string>
+  <string name="setting_page_global_memory">Global memory</string>
+  <string name="setting_page_global_memory_desc">Memory entries shared across all assistants that opt into global memory</string>
+  <string name="setting_page_lessons">Learn from mistakes</string>
+  <string name="setting_page_lessons_desc">Review and remove lessons the agent recorded after past task failures</string>
+  <string name="global_memory_page_title">Global memory</string>
+  <string name="global_memory_page_desc">These entries are shared by every assistant that has "Use global memory" enabled. Add one here, or let the agent add them through the memory tool — both surface in the next conversation on either the app or Telegram.</string>
+  <string name="global_memory_edit_title">Edit global memory</string>
+  <string name="global_memory_entries_label">Entries</string>
+  <string name="global_memory_empty">No global memories yet. The agent will store memories here automatically when it decides a fact is worth recalling across assistants.</string>
+  <string name="assistant_page_session_recall">Session recall</string>
+  <string name="assistant_page_session_recall_desc">Let the agent answer "what did we work on" from your on-device conversation history (recent_chats + conversation_search tools).</string>
+  <string name="assistant_page_lessons_toggle">Learn from mistakes</string>
+  <string name="assistant_page_lessons_toggle_desc">After a genuine task failure the agent records one concise lesson; lessons inject into later conversations. Cancelled or denied tasks never record.</string>
+  <string name="assistant_page_skill_self_improvement">Self-improving skills</string>
+  <string name="assistant_page_skill_self_improvement_desc">After a complex successful task the agent may offer to write a reusable procedure skill. The write is approval-gated (skill_install_from_text); edits live in your skills list.</string>
+  <string name="lessons_page_title">Lessons</string>
+  <string name="lessons_page_desc">Lessons the agent recorded after genuine task failures. The same lesson is injected into later conversations so the agent avoids repeating the mistake. Delete a lesson to stop injecting it; disabling the assistant toggle stops new captures but never deletes existing ones.</string>
+  <string name="lessons_page_empty">No lessons recorded yet. Give the agent a task that genuinely fails (not one you cancel) and a concise lesson will appear here.</string>
+  <string name="lessons_page_delete">Delete lesson</string>
+  <string name="lessons_page_source_task_label">Source task</string>
+  <string name="skills_page_skill_collision_warning">Another skill contributes a /command this one also declares; the activated skill wins.</string>
+  <string name="skills_page_skill_core_collision_warning">A built-in /command shadows this skill\'s command; the built-in wins.</string>
+  <string name="skills_page_skill_duplicate_name">Another skill already uses this name; rename to avoid confusion.</string>
+  <!-- Phase 22 / US5 — success-offer suggestion chip (T045). Appended to the conversation
+       suggestion chips after a multi-step successful task when the assistant has
+       enableSkillSelfImprovement turned on; tapping it sends it as the user message and the
+       agent author + writes a procedure skill via the approval-gated skill_install_from_text
+       tool. No automatic write — only the offer surface. -->
+  <string name="chat_skill_self_improvement_offer">Save this workflow as a reusable procedure skill?</string>
 </resources>

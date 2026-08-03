@@ -1834,5 +1834,29 @@ mDNSアドレス: .localホスト名を使用し、IPを知らなくても同じ
   <string name="slash_cmd_memory">有効スコープの保存済みメモリを表示</string>
   <string name="slash_cmd_doctor">アプリ診断を実行 — 権限、サービス、DB、ネットワーク</string>
   <string name="slash_cmd_undo">最後のやり取りを元に戻す</string>
+  <string name="setting_page_global_memory">グローバルメモリ</string>
+  <string name="setting_page_global_memory_desc">グローバルメモリを有効化したすべてのアシスタント間で共有される記憶</string>
+  <string name="setting_page_lessons">失敗から学ぶ</string>
+  <string name="setting_page_lessons_desc">エージェントが過去のタスク失敗後に記録したレッスンを確認・削除</string>
+  <string name="global_memory_page_title">グローバルメモリ</string>
+  <string name="global_memory_page_desc">これらの項目は「グローバルメモリを使用する」を有効化したすべてのアシスタント間で共有されます。ここから追加するか、エージェントにメモリーツールで追加させるか、どちらでも次の会話（アプリまたは Telegram）に反映されます。</string>
+  <string name="global_memory_edit_title">グローバルメモリを編集</string>
+  <string name="global_memory_entries_label">項目</string>
+  <string name="global_memory_empty">グローバルメモリはまだありません。エージェントがアシスタント間で再利用すべき事実と判断した際に自動で保存されます。</string>
+  <string name="assistant_page_session_recall">セッションリコール</string>
+  <string name="assistant_page_session_recall_desc">エージェントが「私たちが何を話していたか」を端末内の会話履歴から答えられるようにする (recent_chats / conversation_search ツール)。</string>
+  <string name="assistant_page_lessons_toggle">失敗から学ぶ</string>
+  <string name="assistant_page_lessons_toggle_desc">タスクが本当に失敗したときだけ、エージェントが短いレッスンを1件記録し、以降の会話に注入します。キャンセルや承認拒否では記録されません。</string>
+  <string name="assistant_page_skill_self_improvement">自己改善スキル</string>
+  <string name="assistant_page_skill_self_improvement_desc">複雑なタスク成功後、エージェントが再利用可能な手順スキルの提案を行うことがあります。書き込みは skill_install_from_text で承認必須。成果物はスキル一覧で編集できます。</string>
+  <string name="lessons_page_title">レッスン</string>
+  <string name="lessons_page_desc">エージェントがタスクの真の失敗時に記録したレッスンです。以降の会話に注入され、同じ失敗を避けます。削除すると注入も停止します。アシスタントのトグルを無効化しても既存のレッスンは削除されません。</string>
+  <string name="lessons_page_empty">まだレッスンはありません。キャンセルではなく本当に失敗するタスクを与えると、ここに短いレッスンが現れます。</string>
+  <string name="lessons_page_delete">レッスンを削除</string>
+  <string name="lessons_page_source_task_label">元のタスク</string>
+  <string name="skills_page_skill_collision_warning">別のスキルが同じ /コマンドを宣言しています。有効なスキルが優先されます。</string>
+  <string name="skills_page_skill_core_collision_warning">組み込みの /コマンドがこのスキルのコマンドを覆い隠します。組み込みが優先されます。</string>
+  <string name="skills_page_skill_duplicate_name">別のスキルが同じ名前を使用しています。混乱を避けるため名前を変更してください。</string>
+  <string name="chat_skill_self_improvement_offer">この手順を再利用可能なプロシージャスキルとして保存しますか？</string>
 </resources>
 

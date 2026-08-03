@@ -6,9 +6,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
+import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
+import me.rerere.rikkahub.skills.SkillTriggerMatcher
 
 fun createSkillTools(
     enabledSkills: Set<String>,
@@ -32,7 +34,7 @@ fun createSkillTools(
                 Load and apply a skill to get specialized instructions or capabilities.
                 Call this tool when the user's request matches one of the available skills.
             """.trimIndent(),
-            systemPrompt = { _, _ ->
+            systemPrompt = { _, messages ->
                 buildString {
                     // Auto-load skills with `auto_load: true` in their SKILL.md frontmatter:
                     // their body (auto_load_path file if set, else SKILL.md) is inlined into
@@ -52,6 +54,36 @@ fun createSkillTools(
                             } else {
                                 skillManager.readSkillFileCached(skill.name, path)
                             }
+                        }.getOrNull()
+                        if (!body.isNullOrBlank()) {
+                            appendLine(body.trim())
+                            appendLine()
+                        }
+                    }
+
+                    // Phase 22 / US5 — trigger auto-load (FR-028). An enabled skill whose
+                    // `triggers:` frontmatter matches the current user task is inlined for
+                    // this turn only — same shape as auto_load above, scoped to the task. The
+                    // match runs per-turn against the latest user message text; matched skill
+                    // bodies join the auto-load sidebar without needing a `use_skill` call,
+                    // mirroring the data-model frontmatter grammar in contracts/skill-self-
+                    // improvement.md §2.
+                    val taskText = messages
+                        .lastOrNull { it.role == me.rerere.ai.core.MessageRole.USER }
+                        ?.parts
+                        ?.filterIsInstance<UIMessagePart.Text>()
+                        ?.joinToString(separator = "\n") { it.text }
+                        .orEmpty()
+                    val triggerMatched = if (taskText.isNotBlank()) {
+                        val lazyAvailable = available.filterNot { it.autoLoad }
+                        SkillTriggerMatcher.matchingSkills(lazyAvailable, taskText)
+                            // Avoid double-inlining a trigger-matched skill that is already
+                            // auto-loaded — keep auto_load determinism clean.
+                            .filter { skill -> autoLoaded.none { it.name == skill.name } }
+                    } else emptyList()
+                    triggerMatched.forEach { skill ->
+                        val body = runCatching {
+                            skillManager.readSkillBody(skill.name)
                         }.getOrNull()
                         if (!body.isNullOrBlank()) {
                             appendLine(body.trim())

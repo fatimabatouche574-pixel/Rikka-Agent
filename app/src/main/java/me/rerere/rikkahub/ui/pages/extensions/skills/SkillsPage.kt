@@ -79,6 +79,10 @@ fun SkillsPage() {
     val navController = LocalNavController.current
     val vm = koinViewModel<SkillsVM>()
     val skills by vm.skills.collectAsStateWithLifecycle()
+    // Phase 22 / US5 — review-warning badges (duplicate-name, skill-command collision,
+    // core-command shadow). Surfaced under the matching SkillCard so a generated or imported
+    // skill that collides is reviewed, not silently inert (FR-027/FR-029).
+    val flags by vm.skillFlags.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val toaster = LocalToaster.current
     val context = LocalContext.current
@@ -165,6 +169,7 @@ fun SkillsPage() {
             items(skills, key = { it.name }) { skill ->
                 SkillCard(
                     skill = skill,
+                    flag = flags[skill.name],
                     onClick = { navController.navigate(Screen.SkillDetail(skill.name)) },
                     onDelete = { deleteTarget = skill },
                 )
@@ -379,6 +384,7 @@ private fun CatalogRow(
 @Composable
 private fun SkillCard(
     skill: SkillMetadata,
+    flag: SkillFlag? = null,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -422,6 +428,28 @@ private fun SkillCard(
                         text = skill.compatibility,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+                // Phase 22 / US5 — review-warning badge. CoreCollision is the strongest
+                // (built-in command shadows the skill's own), then SkillCollision (another
+                // skill claimed the same command), then DuplicateName (name clash).
+                if (flag != null) {
+                    val (text, color) = when (flag) {
+                        SkillFlag.CoreCollision ->
+                            stringResource(R.string.skills_page_skill_core_collision_warning) to
+                                MaterialTheme.colorScheme.error
+                        SkillFlag.SkillCollision ->
+                            stringResource(R.string.skills_page_skill_collision_warning) to
+                                MaterialTheme.colorScheme.error
+                        SkillFlag.DuplicateName ->
+                            stringResource(R.string.skills_page_skill_duplicate_name) to
+                                MaterialTheme.colorScheme.tertiary
+                    }
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        maxLines = 2,
                     )
                 }
             }

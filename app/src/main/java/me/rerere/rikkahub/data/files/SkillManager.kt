@@ -436,6 +436,7 @@ class SkillManager(
                 autoLoad = frontmatter["auto_load"]?.equals("true", ignoreCase = true) == true,
                 autoLoadPath = frontmatter["auto_load_path"]?.takeIf { it.isNotBlank() },
                 commands = SkillFrontmatterParser.parseCommands(frontmatter["commands"]),
+                triggers = SkillFrontmatterParser.parseTriggers(frontmatter["triggers"]),
                 skillDir = skillDir,
             )
         }.getOrElse {
@@ -470,6 +471,10 @@ data class SkillMetadata(
     // entries contributed to the slash-command registry when the skill is enabled. Parsed
     // as comma-separated and/or repeatable lines; backward compatible (default empty).
     val commands: List<String> = emptyList(),
+    // Phase 22 / US5 — optional `triggers:` frontmatter: keyword / regex patterns matched
+    // against the current task text for auto-load at prompt build (createSkillTools). Parsed
+    // by the same line-oriented parser as `commands:`; backward compatible (default empty).
+    val triggers: List<String> = emptyList(),
     val skillDir: File,
 ) {
     val skillFile: File get() = skillDir.resolve("SKILL.md")
@@ -508,15 +513,45 @@ object SkillFrontmatterParser {
         if (!normalised.startsWith("---")) return result
         val endRange = findFrontmatterEndRange(normalised) ?: return result
         val yaml = normalised.substring(3, endRange.first).trim()
-        yaml.lines().forEach { line ->
+        val lines = yaml.lines()
+        // Phase 22 / US5 — accept both inline `key: value` lines AND multi-line `key:\n  - a\n
+        //   - b` YAML lists by accumulating the list items into a single comma-separated
+        //   string under the same key. Existing skills (single-line values only) parse
+        //   unchanged. Backward compatibility: a key with neither an inline value nor any
+        //   list items just isn't recorded, matching the prior forEach behaviour.
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i]
             val colonIdx = line.indexOf(':')
             if (colonIdx > 0) {
                 val key = line.substring(0, colonIdx).trim()
-                val value = line.substring(colonIdx + 1).trim().removeSurrounding("\"")
-                if (key.isNotBlank() && value.isNotBlank()) {
-                    result[key] = value
+                val inlineValue = line.substring(colonIdx + 1).trim().removeSurrounding("\"")
+                if (key.isNotBlank() && inlineValue.isNotBlank()) {
+                    result[key] = inlineValue
+                } else if (key.isNotBlank()) {
+                    // Inline value is blank — collect upcoming YAML list items ` - val` until
+                    // the next non-list line. The contract §1 documents triggers/commands in
+                    // this multi-line list form (e.g. `  - backup`, `  - "/backup: Run ..."`).
+                    val items = mutableListOf<String>()
+                    var j = i + 1
+                    while (j < lines.size) {
+                        val next = lines[j].trim()
+                        if (next.startsWith("- ") || next == "-") {
+                            val item = next.removePrefix("-").trim().removeSurrounding("\"")
+                            if (item.isNotBlank()) items.add(item)
+                            j++
+                        } else if (next.isBlank()) {
+                            j++
+                        } else break
+                    }
+                    if (items.isNotEmpty()) {
+                        result[key] = items.joinToString(", ")
+                        i = j
+                        continue
+                    }
                 }
             }
+            i++
         }
         return result
     }
@@ -532,6 +567,20 @@ object SkillFrontmatterParser {
         return raw.split(',')
             .map { it.trim() }
             .filter { it.startsWith("/") && it.contains(':') }
+    }
+
+    /**
+     * Phase 22 / US5 — parse the `triggers:` frontmatter value into a list of free-form
+     * patterns. Entries are keyword/regex patterns; the matcher decides at runtime whether
+     * a pattern is regex (compiles) or plain substring (same tolerance as
+     * [me.rerere.rikkahub.data.model.PromptInjection.RegexInjection]). Backward compatible:
+     * missing `triggers:` → empty list.
+     */
+    fun parseTriggers(raw: String?): List<String> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return raw.split(',')
+            .map { it.trim().removeSurrounding("\"") }
+            .filter { it.isNotBlank() }
     }
 
     fun extractBody(content: String): String {

@@ -121,6 +121,8 @@ import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
+import me.rerere.rikkahub.ui.pages.setting.GlobalMemoryPage
+import me.rerere.rikkahub.ui.pages.setting.LessonsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
@@ -534,6 +536,14 @@ class RouteActivity : ComponentActivity() {
                                 me.rerere.rikkahub.ui.pages.setting.doctor.DoctorScreen()
                             }
 
+                            entry<Screen.GlobalMemory> {
+                                GlobalMemoryPage()
+                            }
+
+                            entry<Screen.Lessons> {
+                                LessonsPage()
+                            }
+
                             entry<Screen.SettingToolApprovals> {
                                 me.rerere.rikkahub.ui.pages.setting.SettingToolApprovalsPage()
                             }
@@ -792,6 +802,12 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingDoctor : Screen
+
+    @Serializable
+    data object GlobalMemory : Screen
+
+    @Serializable
+    data object Lessons : Screen
 
     @Serializable
     data object SettingToolApprovals : Screen

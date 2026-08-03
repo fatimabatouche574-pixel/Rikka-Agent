@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.command
 
 import android.util.Log
+import java.util.Collections
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
 
@@ -125,4 +126,13 @@ class SlashCommandRegistry internal constructor(
 
     /** Skill-command collisions from the most recent [registerSkillCommands] pass. */
     fun collisionFlags(): List<SkillCommandCollision> = collisions
+
+    /**
+     * Phase 22 / US5 — names of the core (built-in) commands registered at construction.
+     * Used by the skills-review UI to flag a skill whose `commands:` entry collides with a
+     * core command (the built-in always wins). Exposed read-only so the SkillsPage can
+     * surface the warning without re-running dispatch.
+     */
+    fun coreCommandTokens(): Set<String> =
+        Collections.unmodifiableSet(coreCommands.keys)
 }
