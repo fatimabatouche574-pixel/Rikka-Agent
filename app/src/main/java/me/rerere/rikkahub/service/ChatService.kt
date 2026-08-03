@@ -1235,10 +1235,11 @@ class ChatService(
 
         runCatching {
             val settings = settingsStore.settingsFlow.first()
-            val assistantModelId = settings.getAssistantById(conversation.assistantId)?.chatModelId
+            val assistant = settings.getAssistantById(conversation.assistantId)
+            val fallbackModelId = assistant?.chatModelId ?: settings.chatModelId
             val model = settings.findModelById(settings.titleModelId)
                 ?: settings.findModelById(settings.fastModelId)
-                ?: assistantModelId?.let { settings.findModelById(it) }
+                ?: settings.providers.findModelById(fallbackModelId)
                 ?: return
             val provider = model.findProvider(settings.providers) ?: return
             // Same defence as handleLlmTurn: don't burn tokens on a disabled provider.
