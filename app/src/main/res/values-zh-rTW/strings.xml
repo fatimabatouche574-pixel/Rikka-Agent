@@ -962,6 +962,10 @@
   <string name="setting_catalog_page_using_bundled">使用內建目錄</string>
   <string name="setting_catalog_page_using_downloaded">使用已下載目錄</string>
   <string name="setting_catalog_page_provider_count">%1$d 個提供商 · %2$s</string>
+  <string name="setting_catalog_page_refresh">重新整理</string>
+  <string name="setting_catalog_page_catalog_updated">目錄已更新</string>
+  <string name="setting_catalog_page_refresh_failed">更新失敗 — 正在使用內建目錄</string>
+  <string name="setting_catalog_page_last_updated">上次更新：%1$s</string>
   <string name="setting_provider_page_catalog">目錄</string>
   <string name="setting_tts_page_add">新增</string>
   <string name="setting_tts_page_add_provider">新增TTS提供商</string>

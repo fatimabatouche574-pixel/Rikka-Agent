@@ -112,4 +112,122 @@ class ModelCatalogServiceTest {
             tempDir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `refreshCatalog success writes downloaded catalog and publishes DOWNLOADED`() = runBlocking {
+        val tempDir = Files.createTempDirectory("catalog-test").toFile()
+        try {
+            val service = newService(tempDir, download = { bundledRaw })
+            service.warmUp()
+            assertEquals(ModelCatalogSource.BUNDLED, service.status.value.source)
+
+            val refreshed = service.refreshCatalog()
+
+            assertEquals(ModelCatalogSource.DOWNLOADED, refreshed.source)
+            assertEquals(ModelCatalogSource.DOWNLOADED, service.status.value.source)
+            assertNotNull("lastSuccessfulRefreshAt should be stamped", refreshed.lastSuccessfulRefreshAt)
+
+            val file = File(tempDir, "model_catalog/lastchat_catalog.json")
+            assertTrue("Downloaded catalog should be written to filesDir", file.exists())
+            assertTrue("Written file should be non-empty", file.length() > 0)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `refreshCatalog non-2xx or blank download silently falls back to bundled`() = runBlocking {
+        val tempDir = Files.createTempDirectory("catalog-test").toFile()
+        try {
+            val service = newService(tempDir, download = { throw IOException("connection refused") })
+            service.warmUp()
+
+            // Must NOT throw — a download failure is silent and keeps the last-good catalog.
+            val refreshed = service.refreshCatalog()
+
+            assertEquals(ModelCatalogSource.BUNDLED, refreshed.source)
+            assertTrue(refreshed.providerCount >= 60)
+            val file = File(tempDir, "model_catalog/lastchat_catalog.json")
+            assertTrue("No downloaded file should be written on failure", !file.exists())
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `refreshCatalog corrupt payload is rejected and bundled stays active`() = runBlocking {
+        val tempDir = Files.createTempDirectory("catalog-test").toFile()
+        try {
+            val service = newService(tempDir, download = { "{ this is not valid json !!" })
+            service.warmUp()
+
+            val refreshed = service.refreshCatalog()
+
+            assertEquals(ModelCatalogSource.BUNDLED, refreshed.source)
+            assertEquals(ModelCatalogSource.BUNDLED, service.status.value.source)
+            assertTrue(service.status.value.providerCount >= 60)
+            val file = File(tempDir, "model_catalog/lastchat_catalog.json")
+            assertTrue("Corrupt payload must not be written", !file.exists())
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `refreshCatalog wrong schema version is rejected`() = runBlocking {
+        val tempDir = Files.createTempDirectory("catalog-test").toFile()
+        try {
+            val wrongSchema = """
+                {
+                  "schema_version": 99,
+                  "updated_at": "2026-07-01",
+                  "providers": [{
+                    "id": "d5734028-d39b-4d41-9841-fd648d65440e",
+                    "name": "FutureProvider",
+                    "base_url": "https://future.example.com/v1",
+                    "type": "openai"
+                  }],
+                  "model_families": [],
+                  "models": []
+                }
+            """.trimIndent()
+            val service = newService(tempDir, download = { wrongSchema })
+            service.warmUp()
+
+            val refreshed = service.refreshCatalog()
+
+            assertEquals(ModelCatalogSource.BUNDLED, refreshed.source)
+            assertEquals(ModelCatalogSource.BUNDLED, service.status.value.source)
+            val file = File(tempDir, "model_catalog/lastchat_catalog.json")
+            assertTrue("Incompatible schema must not be written", !file.exists())
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `refreshCatalog failure preserves a prior successful download`() = runBlocking {
+        val tempDir = Files.createTempDirectory("catalog-test").toFile()
+        try {
+            // Prior good download on disk (same bundled JSON, valid).
+            val file = File(tempDir, "model_catalog/lastchat_catalog.json")
+            file.parentFile.mkdirs()
+            file.writeText(bundledRaw)
+
+            val service = newService(tempDir, download = { throw IOException("server down") })
+            service.warmUp()
+            assertEquals(ModelCatalogSource.DOWNLOADED, service.status.value.source)
+            val priorLastRefresh = service.status.value.lastSuccessfulRefreshAt
+
+            val refreshed = service.refreshCatalog()
+
+            assertEquals(ModelCatalogSource.DOWNLOADED, refreshed.source)
+            assertEquals(ModelCatalogSource.DOWNLOADED, service.status.value.source)
+            assertEquals(priorLastRefresh, service.status.value.lastSuccessfulRefreshAt)
+            // The prior download is byte-for-byte intact.
+            assertEquals(bundledRaw, file.readText())
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 }

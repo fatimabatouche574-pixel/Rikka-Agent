@@ -33,6 +33,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.ai.tools.HeadlessConversations
 import me.rerere.rikkahub.data.ai.models.ModelCatalogService
+import me.rerere.rikkahub.data.ai.models.CatalogRefreshWorker
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.DatabaseUtil
@@ -145,6 +146,11 @@ class RikkaHubApp : Application() {
                 Log.w(TAG, "catalog warmUp failed", it)
             }
         }
+
+        // US3 — schedule the 24h periodic catalog refresh (unique-work KEEP, idempotent).
+        // WorkManager wakes CatalogRefreshWorker on its own; failures are non-fatal and the
+        // last-good catalog stays authoritative (FR-008/FR-013).
+        CatalogRefreshWorker.schedule(this)
 
         // Phase 24 — unified AgentRun ledger boot recovery. Walk the ledger once per
         // process start: any autonomous run (cron / workflow / sub-agent / Telegram /

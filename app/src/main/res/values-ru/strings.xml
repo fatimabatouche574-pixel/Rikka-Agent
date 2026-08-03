@@ -964,6 +964,10 @@
   <string name="setting_catalog_page_using_bundled">Используется встроенный каталог</string>
   <string name="setting_catalog_page_using_downloaded">Используется загруженный каталог</string>
   <string name="setting_catalog_page_provider_count">Провайдеров: %1$d · %2$s</string>
+  <string name="setting_catalog_page_refresh">Обновить</string>
+  <string name="setting_catalog_page_catalog_updated">Каталог обновлён</string>
+  <string name="setting_catalog_page_refresh_failed">Не удалось обновить — используется встроенный каталог</string>
+  <string name="setting_catalog_page_last_updated">Обновлено: %1$s</string>
   <string name="setting_provider_page_catalog">Каталог</string>
   <string name="setting_tts_page_add">Добавить</string>
   <string name="setting_tts_page_add_provider">Добавить поставщика TTS</string>

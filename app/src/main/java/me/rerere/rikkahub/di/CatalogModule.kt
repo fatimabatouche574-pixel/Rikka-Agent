@@ -22,3 +22,11 @@ val catalogModule = module {
         ModelMetadataResolver(snapshotProvider = service::snapshotOrNull)
     }
 }
+
+/**
+ * [CatalogRefreshWorker] (US3) is a `KoinComponent` CoroutineWorker — it is discovered by
+ * WorkManager through the `koin-androidx-workmanager` worker factory (`workManagerFactory()`
+ * in `RikkaHubApp.onCreate`), same as `CronJobWorker` / `TelegramBotHealthWorker`, and needs
+ * no explicit Koin registration. Its 24h periodic schedule is enqueued from app start
+ * (`RikkaHubApp.onCreate` → `CatalogRefreshWorker.schedule`).
+ */

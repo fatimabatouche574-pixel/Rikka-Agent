@@ -43,6 +43,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.dokar.sonner.ToastType
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
@@ -52,10 +56,13 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.models.CatalogProvider
 import me.rerere.rikkahub.data.ai.models.CatalogProviderType
 import me.rerere.rikkahub.data.ai.models.ModelCatalogService
+import me.rerere.rikkahub.data.ai.models.ModelCatalogSource
+import me.rerere.rikkahub.data.ai.models.ModelCatalogStatus
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
+import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.setting.components.CatalogProviderAddSheet
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.androidx.compose.koinViewModel
@@ -72,7 +79,12 @@ fun SettingCatalogPage(vm: SettingVM = koinViewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val presets by service.providerPresets.collectAsStateWithLifecycle()
     val status by service.status.collectAsStateWithLifecycle()
+    val snapshot by service.snapshotFlow.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val toaster = LocalToaster.current
+    val refreshContentDescription = stringResource(R.string.setting_catalog_page_refresh)
+    val refreshSuccessMessage = stringResource(R.string.setting_catalog_page_catalog_updated)
+    val refreshFailedMessage = stringResource(R.string.setting_catalog_page_refresh_failed)
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var searchQuery by remember { mutableStateOf("") }
     var selectedProvider by remember { mutableStateOf<CatalogProvider?>(null) }
@@ -97,8 +109,18 @@ fun SettingCatalogPage(vm: SettingVM = koinViewModel()) {
                 actions = {
                     IconButton(
                         onClick = {
+                            val before = service.status.value.lastSuccessfulRefreshAt
                             scope.launch {
                                 runCatching { service.refreshCatalog() }
+                                val refreshed = service.status.value
+                                val succeeded = !refreshed.isRefreshing &&
+                                    refreshed.lastSuccessfulRefreshAt != before
+                                if (succeeded) {
+                                    toaster.show(refreshSuccessMessage, type = ToastType.Success)
+                                } else {
+                                    // Silent failure per FR-013: non-blocking toast, last-good kept.
+                                    toaster.show(refreshFailedMessage, type = ToastType.Error)
+                                }
                             }
                         }
                     ) {
@@ -107,7 +129,7 @@ fun SettingCatalogPage(vm: SettingVM = koinViewModel()) {
                         } else {
                             Icon(
                                 imageVector = HugeIcons.Refresh01,
-                                contentDescription = null,
+                                contentDescription = refreshContentDescription,
                             )
                         }
                     }
@@ -162,8 +184,8 @@ fun SettingCatalogPage(vm: SettingVM = koinViewModel()) {
             }
 
             CatalogStatusBadge(
-                isDownloaded = status.source == me.rerere.rikkahub.data.ai.models.ModelCatalogSource.DOWNLOADED,
-                providerCount = status.providerCount,
+                status = status,
+                catalogUpdatedAt = snapshot?.updatedAt,
             )
         }
     }
@@ -258,20 +280,39 @@ private fun CatalogProviderIcon(
 }
 
 @Composable
-private fun CatalogStatusBadge(isDownloaded: Boolean, providerCount: Int) {
-    val label = if (isDownloaded) {
+private fun CatalogStatusBadge(status: ModelCatalogStatus, catalogUpdatedAt: String?) {
+    val sourceLabel = if (status.source == ModelCatalogSource.DOWNLOADED) {
         stringResource(R.string.setting_catalog_page_using_downloaded)
     } else {
         stringResource(R.string.setting_catalog_page_using_bundled)
     }
+    val lastUpdated = status.lastSuccessfulRefreshAt?.let { formatCatalogTimestamp(it) }
+        ?: catalogUpdatedAt?.takeIf { it.isNotBlank() }
+    val text = buildString {
+        append(stringResource(R.string.setting_catalog_page_provider_count, status.providerCount, sourceLabel))
+        if (!lastUpdated.isNullOrBlank()) {
+            append('\n')
+            append(stringResource(R.string.setting_catalog_page_last_updated, lastUpdated))
+        }
+    }
     ProvideTextStyle(MaterialTheme.typography.labelSmall) {
         CompositionLocalProvider(LocalContentColor provides LocalContentColor.current.copy(alpha = 0.6f)) {
             Text(
-                text = stringResource(R.string.setting_catalog_page_provider_count, providerCount, label),
+                text = text,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
     }
+}
+
+/** "2026-07-01 14:03" — the wall-clock time of the last successful refresh. */
+private fun formatCatalogTimestamp(epochMs: Long): String {
+    return runCatching {
+        Instant.ofEpochMilli(epochMs)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+    }.getOrNull() ?: ""
 }
 
 @Composable

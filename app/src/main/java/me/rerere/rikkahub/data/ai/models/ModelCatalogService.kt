@@ -19,6 +19,9 @@ private const val MODEL_CATALOG_DIR_NAME = "model_catalog"
 private const val MODEL_CATALOG_FILE_NAME = "lastchat_catalog.json"
 private const val MODEL_CATALOG_ASSET_NAME = "catalog/lastchat_catalog.json"
 
+/** The only catalog schema version this build accepts at refresh time (incompatible → rejected). */
+const val SUPPORTED_CATALOG_SCHEMA_VERSION = 2
+
 /**
  * Update endpoint (R6). The file is published on the repo-owned fork; until it exists the
  * download is a silent no-op and the bundled asset stays authoritative.
@@ -76,8 +79,19 @@ open class ModelCatalogService(
     suspend fun refreshCatalog(): ModelCatalogStatus {
         _status.value = _status.value.copy(isRefreshing = true)
         return try {
-            val rawJson = downloadCatalogJson()
-            ModelCatalogParser.parse(rawJson)
+            val rawJson = downloadRaw()
+            val snapshot = ModelCatalogParser.parse(rawJson)
+            // Reject anything that did not parse into a usable shape (FR-009 / SC-008) —
+            // a corrupt download must never replace the active catalog.
+            if (snapshot.providers.isEmpty() && snapshot.exactEntries.isEmpty()) {
+                throw IOException("Downloaded catalog parsed to an empty snapshot")
+            }
+            if (snapshot.schemaVersion != SUPPORTED_CATALOG_SCHEMA_VERSION) {
+                throw IOException(
+                    "Unsupported catalog schema version ${snapshot.schemaVersion} " +
+                        "(expected $SUPPORTED_CATALOG_SCHEMA_VERSION)",
+                )
+            }
             writeDownloadedCatalog(rawJson)
             loadCatalogIfNeeded(forceReload = true)
         } catch (t: Throwable) {
@@ -179,11 +193,21 @@ open class ModelCatalogService(
         }
     }
 
+    /**
+     * Atomically write the validated catalog: write to a sibling temp file first, then
+     * rename over the target. A crash mid-write can never leave a truncated file that would
+     * mask the last-good catalog. Falls back to a direct write if rename is unsupported.
+     */
     private suspend fun writeDownloadedCatalog(rawJson: String) {
         withContext(Dispatchers.IO) {
             val file = downloadedCatalogFile()
             file.parentFile?.mkdirs()
-            file.writeText(rawJson)
+            val temp = File(file.parentFile, "${file.name}.tmp")
+            temp.writeText(rawJson)
+            if (!temp.renameTo(file)) {
+                file.writeText(rawJson)
+                temp.delete()
+            }
         }
     }
 

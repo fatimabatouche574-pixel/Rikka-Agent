@@ -996,6 +996,10 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_catalog_page_using_bundled">使用内置目录</string>
   <string name="setting_catalog_page_using_downloaded">使用已下载目录</string>
   <string name="setting_catalog_page_provider_count">%1$d 个提供商 · %2$s</string>
+  <string name="setting_catalog_page_refresh">刷新</string>
+  <string name="setting_catalog_page_catalog_updated">目录已更新</string>
+  <string name="setting_catalog_page_refresh_failed">更新失败 — 正在使用内置目录</string>
+  <string name="setting_catalog_page_last_updated">最后更新：%1$s</string>
   <string name="setting_provider_page_catalog">目录</string>
   <string name="setting_tts_page_add">添加</string>
   <string name="setting_tts_page_add_provider">添加TTS提供商</string>

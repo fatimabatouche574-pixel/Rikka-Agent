@@ -34,7 +34,7 @@ data class ModelResolutionOptions(
  * is `null` the resolver is a no-op passthrough and callers fall through to the built-in
  * `ModelRegistry`.
  */
-class ModelMetadataResolver(
+open class ModelMetadataResolver(
     private val snapshotProvider: () -> ModelCatalogSnapshot?,
 ) {
     fun applyToModel(
@@ -73,7 +73,7 @@ class ModelMetadataResolver(
         )
     }
 
-    fun applyToProvider(
+    open fun applyToProvider(
         provider: ProviderSetting,
         options: ModelResolutionOptions = ModelResolutionOptions(
             preserveDisplayName = true,

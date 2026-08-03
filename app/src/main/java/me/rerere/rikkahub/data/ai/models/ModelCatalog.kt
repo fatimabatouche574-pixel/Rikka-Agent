@@ -394,6 +394,8 @@ data class ModelCatalogEntry(
 )
 
 data class ModelCatalogSnapshot(
+    val schemaVersion: Int = 1,
+    val updatedAt: String? = null,
     val exactEntries: Map<String, ModelCatalogEntry>,
     val canonicalEntries: Map<String, List<ModelCatalogEntry>>,
     val providers: List<CatalogProvider> = emptyList(),
@@ -406,6 +408,8 @@ data class ModelCatalogSnapshot(
 ) {
     val catalog: LastChatCatalog
         get() = LastChatCatalog(
+            schemaVersion = schemaVersion,
+            updatedAt = updatedAt,
             providers = providers,
             modelFamilies = modelFamilies,
             globalRules = globalRules,
@@ -504,6 +508,8 @@ object ModelCatalogParser {
             }
 
         return ModelCatalogSnapshot(
+            schemaVersion = catalog.schemaVersion,
+            updatedAt = catalog.updatedAt,
             exactEntries = exactEntries,
             canonicalEntries = canonicalEntries.mapValues { (_, entries) -> entries.toList() },
             providers = catalog.providers,

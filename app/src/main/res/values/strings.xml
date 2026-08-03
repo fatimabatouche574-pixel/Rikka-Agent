@@ -1015,6 +1015,10 @@
   <string name="setting_catalog_page_using_bundled">Using bundled catalog</string>
   <string name="setting_catalog_page_using_downloaded">Using downloaded catalog</string>
   <string name="setting_catalog_page_provider_count">%1$d providers · %2$s</string>
+  <string name="setting_catalog_page_refresh">Refresh</string>
+  <string name="setting_catalog_page_catalog_updated">Catalog updated</string>
+  <string name="setting_catalog_page_refresh_failed">Update failed — using bundled catalog</string>
+  <string name="setting_catalog_page_last_updated">Last updated: %1$s</string>
   <string name="setting_provider_page_catalog">Catalog</string>
   <string name="setting_tts_page_add">Add</string>
   <string name="setting_tts_page_add_provider">Add TTS Provider</string>

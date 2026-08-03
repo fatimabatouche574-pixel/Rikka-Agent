@@ -964,6 +964,10 @@ mDNS 주소: .local 호스트네임을 사용하며, IP를 몰라도 같은 네�
   <string name="setting_catalog_page_using_bundled">내장 카탈로그 사용 중</string>
   <string name="setting_catalog_page_using_downloaded">다운로드한 카탈로그 사용 중</string>
   <string name="setting_catalog_page_provider_count">프로바이더 %1$d개 · %2$s</string>
+  <string name="setting_catalog_page_refresh">새로고침</string>
+  <string name="setting_catalog_page_catalog_updated">카탈로그가 업데이트되었습니다</string>
+  <string name="setting_catalog_page_refresh_failed">업데이트 실패 — 내장 카탈로그 사용 중</string>
+  <string name="setting_catalog_page_last_updated">마지막 업데이트: %1$s</string>
   <string name="setting_provider_page_catalog">카탈로그</string>
   <string name="setting_tts_page_add">추가</string>
   <string name="setting_tts_page_add_provider">TTS 제공업체 추가</string>
