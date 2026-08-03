@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.browser
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.CookieManager
@@ -12,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
+import me.rerere.rikkahub.utils.LocaleHelper
 import java.io.File
 
 /**
@@ -33,6 +35,9 @@ import java.io.File
  */
 @OptIn(ExperimentalUuidApi::class)
 class BrowserActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private var webView: WebView? = null
     private val canGoBack = mutableStateOf(false)

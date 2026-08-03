@@ -677,11 +677,17 @@ private fun QwenTTSConfiguration(
 
     // Language Type
     var languageExpanded by remember { mutableStateOf(false) }
-    val languageTypes = listOf("Auto", "Chinese", "English", "Japanese", "Korean")
+    val languageTypes = listOf(
+        stringResource(R.string.tts_language_auto),
+        stringResource(R.string.tts_language_chinese),
+        stringResource(R.string.tts_language_english),
+        stringResource(R.string.tts_language_japanese),
+        stringResource(R.string.tts_language_korean)
+    )
 
     FormItem(
-        label = { Text("Language Type") },
-        description = { Text("Language type for TTS synthesis") }
+        label = { Text(stringResource(R.string.tts_language_type)) },
+        description = { Text(stringResource(R.string.tts_language_type_desc)) }
     ) {
         ExposedDropdownMenuBox(
             expanded = languageExpanded,
@@ -1116,8 +1122,8 @@ private fun FishAudioTTSConfiguration(
     // Model (下拉选择框 + 文本输入框，完全同 ElevenLabs 格式)
     var modelExpanded by remember { mutableStateOf(false) }
     val models = listOf(
-        "s2.1-pro" to "S2.1-Pro (推荐)",
-        "s2.1-pro-free" to "S2.1-Pro Free (免费)",
+        "s2.1-pro" to "S2.1-Pro (${stringResource(R.string.tts_model_recommended)})",
+        "s2.1-pro-free" to "S2.1-Pro Free (${stringResource(R.string.tts_model_free)})",
         "s2-pro" to "S2-Pro",
         "s1" to "S1"
     )
@@ -1213,7 +1219,7 @@ private fun StepTTSConfiguration(
     // API Key
     FormItem(
         label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text("从阶跃星辰官网获取密钥: platform.stepfun.com/interface-key") }
+        description = { Text(stringResource(R.string.tts_stepfun_apikey_hint)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,

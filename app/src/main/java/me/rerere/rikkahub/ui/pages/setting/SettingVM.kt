@@ -23,4 +23,10 @@ class SettingVM(
             settingsStore.update(settings)
         }
     }
+
+    fun setAppLanguage(tag: String) {
+        viewModelScope.launch {
+            settingsStore.setAppLanguage(tag)
+        }
+    }
 }

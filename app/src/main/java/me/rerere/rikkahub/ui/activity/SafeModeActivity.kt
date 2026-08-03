@@ -57,10 +57,15 @@ import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.utils.CrashHandler
+import me.rerere.rikkahub.utils.LocaleHelper
 import org.koin.android.ext.android.inject
 import kotlin.uuid.Uuid
 
 class SafeModeActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
+
     private val settingsStore by inject<SettingsStore>()
 
     @OptIn(ExperimentalMaterial3Api::class)

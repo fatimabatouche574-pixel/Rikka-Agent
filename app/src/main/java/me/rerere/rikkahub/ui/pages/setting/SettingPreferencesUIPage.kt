@@ -44,6 +44,7 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Delete02
 import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.ChatFontFamily
 import me.rerere.rikkahub.data.datastore.DisplaySetting
 import me.rerere.rikkahub.data.files.FileFolders
@@ -52,6 +53,7 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.Select
+import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.rememberChatFontFamily
@@ -64,6 +66,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     var displaySetting by remember(settings) { mutableStateOf(settings.displaySetting) }
     val context = LocalContext.current
+    val navController = LocalNavController.current
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
     val chatFontFamily = rememberChatFontFamily(displaySetting)
@@ -403,6 +406,16 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                 }
                             )
                         },
+                    )
+                }
+            }
+            item {
+                CardGroup(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                ) {
+                    item(
+                        onClick = { navController.navigate(Screen.SettingLanguage) },
+                        headlineContent = { Text(stringResource(R.string.setting_language)) },
                     )
                 }
             }

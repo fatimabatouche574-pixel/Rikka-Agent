@@ -1,6 +1,7 @@
 package me.rerere.rikkahub
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -119,6 +120,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
+import me.rerere.rikkahub.ui.pages.setting.SettingLanguagePage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.GlobalMemoryPage
@@ -138,6 +140,7 @@ import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
+import me.rerere.rikkahub.utils.LocaleHelper
 import okhttp3.OkHttpClient
 import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
@@ -146,6 +149,10 @@ import kotlin.uuid.Uuid
 private const val TAG = "RouteActivity"
 
 class RouteActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
+
     companion object {
         const val EXTRA_OPEN_CODEX_SETTINGS = "open_codex_settings"
     }
@@ -451,6 +458,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingPreferencesUIPage()
                             }
 
+                            entry<Screen.SettingLanguage> {
+                                SettingLanguagePage()
+                            }
+
                             entry<Screen.SettingProvider> {
                                 SettingProviderPage()
                             }
@@ -616,7 +627,7 @@ class RouteActivity : ComponentActivity() {
                     )
                     if (BuildConfig.DEBUG) {
                         Text(
-                            text = "[开发模式]",
+                            text = stringResource(R.string.debug_mode_banner),
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 4.dp),
@@ -739,6 +750,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingPreferencesUI : Screen
+
+    @Serializable
+    data object SettingLanguage : Screen
 
     @Serializable
     data object SettingProvider : Screen

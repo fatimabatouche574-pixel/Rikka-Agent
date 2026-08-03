@@ -10,6 +10,7 @@
   <string name="app_name">RikkaHub Agent</string>
   <string name="asr_button_content_description">语音识别</string>
   <string name="asr_button_stop">停止</string>
+  <string name="asr_hotwords_placeholder">热词1, 热词2, 热词3</string>
   <string name="assistant_detail_basic_desc">配置名称、头像、模型和参数</string>
   <string name="assistant_detail_extensions_desc">管理提示词注入、世界书和技能等扩展</string>
   <string name="assistant_detail_local_tools_desc">启用本地工具（如 JavaScript 引擎）</string>
@@ -414,6 +415,7 @@
   <string name="language_french">🇫🇷 Français</string>
   <string name="language_german">🇩🇪 Deutsch</string>
   <string name="language_italian">🇮🇹 Italiano</string>
+  <string name="language_indonesian">🇮🇩 Bahasa Indonesia</string>
   <string name="language_japanese">🇯🇵 日本語</string>
   <string name="language_korean">🇰🇷 한국어</string>
   <string name="language_simplified_chinese">🇨🇳 简体中文</string>
@@ -421,6 +423,7 @@
   <string name="language_traditional_chinese">🇨🇳 繁體中文</string>
   <string name="mcp_picker_syncing">正在同步MCP服务器...</string>
   <string name="mcp_picker_title">MCP服务器</string>
+  <string name="markdown_table_label">表格</string>
   <string name="menu">菜单</string>
   <string name="menu_page_afternoon_greeting">下午好\uD83D\uDC4B</string>
   <string name="menu_page_evening_greeting">晚上好\uD83D\uDC4B</string>
@@ -1056,12 +1059,31 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_tts_page_voice_name">语音名称</string>
   <string name="setting_tts_page_voice_name_description">语音的名称</string>
   <string name="setting_tts_page_voice_name_placeholder">Kore</string>
+  <string name="tts_language_auto">自动</string>
+  <string name="tts_language_chinese">中文</string>
+  <string name="tts_language_english">英语</string>
+  <string name="tts_language_japanese">日语</string>
+  <string name="tts_language_korean">韩语</string>
+  <string name="tts_language_type">语言类型</string>
+  <string name="tts_language_type_desc">TTS 合成的语言类型</string>
+  <string name="tts_model_free">免费</string>
+  <string name="tts_model_recommended">推荐</string>
+  <string name="tts_stepfun_apikey_hint">从阶跃星辰官网获取密钥: platform.stepfun.com/interface-key</string>
   <string name="settings">设置</string>
   <string name="share">分享</string>
   <string name="share_handler_page_title">选择一个助手处理分享</string>
   <string name="shortcut_take_picture">拍照提问</string>
   <string name="silicon_flow_description">**全球领先的 AI 能力提供商，加速 AGI 普惠人类。**</string>
   <string name="silicon_flow_website">官网: [https://cloud.siliconflow.cn/](https://cloud.siliconflow.cn/i/u1Ia4Ycf)</string>
+  <string name="aihubmix_description">提供 OpenAI、Claude、Google Gemini 等主流模型的高并发和稳定服务\n官网：[aihubmix.com](https://aihubmix.com?aff=pG7r)\n充值: [console.aihubmix.com/topup](https://console.aihubmix.com/topup)</string>
+  <string name="debug_mode_banner">开发模式</string>
+  <string name="aihubmix_short_description">支持gpt, claude, gemini等200+模型</string>
+  <string name="xiaoma_description">小马算力是一家提供国产模型的API网关服务，使用统一接口接入多种模型\n官网: [tokenpony.cn](https://www.tokenpony.cn/79clb)</string>
+  <string name="provider_302ai_description">企业级AI服务\n官网：[302.ai](https://302.ai/)</string>
+  <string name="suixiang_description">可靠高效的 API 中继服务，提供 Claude、Codex、Gemini 等中继服务。注重隐私·无数据倒卖·无模型掺水，充值额度 1:1，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。\n官网：[sui-xiang.com](https://sui-xiang.com)</string>
+  <string name="suixiang_short_description">Claude、Codex、Gemini 等中继服务，1:1 充值</string>
+  <string name="ackai_description">所有AI大模型全都可以用！无需翻墙！价格是官方5折！\n官网：[ackai.fun](https://ackai.fun/register?aff=jxpP)</string>
+  <string name="unifyllm_description">一站式LLM API中转平台货源站\n官网：[unifyllm.com](https://www.unifyllm.com/)</string>
   <string name="skill_detail_page_content">内容</string>
   <string name="skill_detail_page_create">创建</string>
   <string name="skill_detail_page_delete_confirm">确定要删除文件“%s”吗？</string>
@@ -1167,6 +1189,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_page_preferences_general_desc">交互行为、滚动、输入设置</string>
   <string name="setting_page_preferences_ui">界面偏好设置</string>
   <string name="setting_page_preferences_ui_desc">消息显示、字体、代码块</string>
+  <string name="setting_language">语言</string>
+  <string name="setting_language_title">语言</string>
   <string name="skills_page_import_from_file">从文件导入</string>
   <string name="skills_page_add_manually">手动添加</string>
   <string name="setting_model_page_tab_model">模型</string>

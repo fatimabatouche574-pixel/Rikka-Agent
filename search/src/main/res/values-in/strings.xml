@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="bing_desc">Perhatikan bahwa pencarian Bing berbasis crawler, yang mungkin tidak stabil dan tidak disarankan.</string>
+  <string name="click_to_get_api_key">Klik untuk mendapatkan API Key</string>
+  <string name="searxng_desc_1">settings.yml perlu mengaktifkan dukungan format json:</string>
+  <string name="searxng_desc_2">search:\n  formats:\n    - html\n    - json</string>
+  <string name="custom_js_desc">Provider pencarian kustom yang didukung QuickJS. Implementasikan fungsi search(query, resultSize) dan opsional scrape(urls). Gunakan fetch(url, options?) untuk HTTP request.</string>
+</resources>

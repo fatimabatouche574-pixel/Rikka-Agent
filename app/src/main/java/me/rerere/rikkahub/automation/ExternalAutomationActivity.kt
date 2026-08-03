@@ -1,11 +1,13 @@
 package me.rerere.rikkahub.automation
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.utils.LocaleHelper
 import org.koin.android.ext.android.inject
 
 /**
@@ -30,6 +32,9 @@ import org.koin.android.ext.android.inject
  * `finish()` — important for the autonomous-fire UX (Tasker hands off → no flash).
  */
 class ExternalAutomationActivity : Activity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private val config: ExternalAutomationConfig by inject()
     private val dispatcher: ExternalAutomationDispatcher by inject()

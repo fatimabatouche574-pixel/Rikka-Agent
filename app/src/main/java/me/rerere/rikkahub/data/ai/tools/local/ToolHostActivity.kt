@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.nfc.NdefMessage
@@ -14,9 +15,13 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
+import me.rerere.rikkahub.utils.LocaleHelper
 import org.koin.android.ext.android.inject
 
 class ToolHostActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private val cameraBuffer: CameraResultBuffer by inject()
     private val biometricBuffer: BiometricResultBuffer by inject()

@@ -90,7 +90,7 @@ private fun decodeProvidersTolerant(raw: String): List<ProviderSetting> {
     }
 }
 
-private val Context.settingsStore by preferencesDataStore(
+internal val Context.settingsStore by preferencesDataStore(
     name = "settings",
     produceMigrations = { context ->
         listOf(
@@ -191,6 +191,9 @@ class SettingsStore(
 
         // 赞助提醒
         val SPONSOR_ALERT_DISMISSED_AT = intPreferencesKey("sponsor_alert_dismissed_at")
+
+        // App language (BCP-47 tag; default "en" — English-first regardless of system locale)
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
     }
 
     private val dataStore = context.settingsStore
@@ -293,6 +296,7 @@ class SettingsStore(
                 } ?: BackupReminderConfig(),
                 launchCount = preferences[LAUNCH_COUNT] ?: 0,
                 sponsorAlertDismissedAt = preferences[SPONSOR_ALERT_DISMISSED_AT] ?: 0,
+                appLanguage = preferences[APP_LANGUAGE] ?: "en",
             )
         }
         .map {
@@ -475,6 +479,15 @@ class SettingsStore(
         .distinctUntilChanged()
         .toMutableStateFlow(scope, Settings.dummy())
 
+    val appLanguageFlow = settingsFlow
+        .map { it.appLanguage }
+        .distinctUntilChanged()
+
+    suspend fun setAppLanguage(tag: String) {
+        update { it.copy(appLanguage = tag) }
+        me.rerere.rikkahub.utils.LocaleHelper.updateCache(tag)
+    }
+
     suspend fun update(settings: Settings) {
         if(settings.init) {
             Log.w(TAG, "Cannot update dummy settings")
@@ -549,6 +562,7 @@ class SettingsStore(
             preferences[BACKUP_REMINDER_CONFIG] = JsonInstant.encodeToString(settings.backupReminderConfig)
             preferences[LAUNCH_COUNT] = settings.launchCount
             preferences[SPONSOR_ALERT_DISMISSED_AT] = settings.sponsorAlertDismissedAt
+            preferences[APP_LANGUAGE] = settings.appLanguage
         }
     }
 
@@ -705,6 +719,7 @@ data class Settings(
     val aiLogLevel: AiLogLevel = AiLogLevel.INFO,
     val backupReminderConfig: BackupReminderConfig = BackupReminderConfig(),
     val sponsorAlertDismissedAt: Int = 0,
+    val appLanguage: String = "en",
 ) {
     companion object {
         // 构造一个用于初始化的settings, 但它不能用于保存，防止使用初始值存储

@@ -344,4 +344,32 @@ class ModelCatalogTest {
         // Unknown locale falls back to English
         assertEquals("OpenRouter", provider.displayName(Locale("de")))
     }
+
+    @Test
+    fun `English locale resolves to base name even when zh i18n entries are present`() {
+        val provider = CatalogProvider(
+            id = "test-en-lock-in",
+            name = "OpenRouter",
+            description = "Access many hosted models",
+            baseUrl = "https://openrouter.ai/api/v1",
+            nameI18n = mapOf("zh-CN" to "开放路由", "zh" to "中文路由"),
+            descriptionI18n = mapOf("zh-CN" to "中文描述"),
+        )
+        assertEquals("OpenRouter", provider.displayName(Locale.ENGLISH))
+        assertEquals("Access many hosted models", provider.description(Locale.ENGLISH))
+    }
+
+    @Test
+    fun `empty i18n map resolves to base name and description`() {
+        val provider = CatalogProvider(
+            id = "test-empty-i18n",
+            name = "DeepSeek",
+            description = "DeepSeek models",
+            baseUrl = "https://api.deepseek.com/v1",
+        )
+        assertEquals("DeepSeek", provider.displayName(Locale.ENGLISH))
+        assertEquals("DeepSeek", provider.displayName(Locale("zh")))
+        assertEquals("DeepSeek models", provider.description(Locale.ENGLISH))
+        assertEquals("DeepSeek models", provider.description(Locale("zh", "CN")))
+    }
 }

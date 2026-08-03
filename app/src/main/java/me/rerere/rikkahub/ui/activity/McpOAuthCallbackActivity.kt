@@ -1,11 +1,13 @@
 package me.rerere.rikkahub.ui.activity
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.utils.LocaleHelper
 import org.koin.android.ext.android.inject
 
 /**
@@ -13,6 +15,10 @@ import org.koin.android.ext.android.inject
  * (rikkahub://mcp-oauth-callback?code=...&state=...)，解析后经 [AppEventBus] 转发。
  */
 class McpOAuthCallbackActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
+
     private val eventBus by inject<AppEventBus>()
     private val appScope by inject<AppScope>()
 
