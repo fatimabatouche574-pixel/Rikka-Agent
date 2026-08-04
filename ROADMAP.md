@@ -1,6 +1,6 @@
-# Rikka Agentic — Roadmap
+# Rikka Agent — Roadmap
 
-Fork privat `udin-petot/Rikka-Agentic` dari `ExTV/rikkahub-agent` (yang merupakan fork dari `rikkahub/rikkahub`).
+Fork privat `udin-petot/Rikka-Agent` dari `ExTV/rikkahub-agent` (yang merupakan fork dari `rikkahub/rikkahub`).
 
 **Visi:** "Hermes di Android" — agent on-device yang jalan lokal, dengan UI modern (Material You 3 Expressive), provider LLM lengkap, dan semua fitur terbaik dari ekosistem RikkaHub.
 

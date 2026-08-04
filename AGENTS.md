@@ -1,6 +1,6 @@
-# Rikka Agentic — Agent Rules
+# Rikka Agent — Agent Rules
 
-Rikka Agentic is a native Android autonomous-agent runtime (Kotlin + Jetpack Compose), forked from `ExTV/rikkahub-agent` (itself a fork of `rikkahub/rikkahub`). It turns the phone into a local AI agent: 80+ device tools, workflows, scheduled jobs, Telegram bot, in-app AI-driven browser, SSH, MCP servers, sub-agents, and skills.
+Rikka Agent is a native Android autonomous-agent runtime (Kotlin + Jetpack Compose), forked from `ExTV/rikkahub-agent` (itself a fork of `rikkahub/rikkahub`). It turns the phone into a local AI agent: 80+ device tools, workflows, scheduled jobs, Telegram bot, in-app AI-driven browser, SSH, MCP servers, sub-agents, and skills.
 
 ## Build & Test
 
@@ -39,7 +39,7 @@ First build is slow (Gradle distribution + deps + web-ui once). APK output: `app
 
 ## Git workflow
 
-- `origin` = `udin-petot/Rikka-Agentic` (private), branch `master`.
+- `origin` = `udin-petot/Rikka-Agent` (private), branch `master`.
 - `upstream` = `ExTV/rikkahub-agent` — sync via `git fetch upstream && git merge upstream/master`; preserve fork invariants when resolving conflicts (435 commits ahead; conflicts are expected).
 - `lastchat` = `Cocolalilal/LastChat` (UI/UX reference), `amber` = `soul99soul-glitch/AmberAgent` (architecture reference). Fetch before diffing/cherry-picking; trees diverged, expect conflicts — evaluate per-commit.
 

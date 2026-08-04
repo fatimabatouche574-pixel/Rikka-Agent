@@ -6,7 +6,7 @@
   <string name="about_page_title">Tentang</string>
   <string name="about_page_version">Versi</string>
   <string name="about_page_website">Website</string>
-  <string name="accessibility_service_summary">Memungkinkan RikkaHub mengetuk, menggeser, scroll, membaca konten layar, dan mengambil screenshot saat LLM menggunakan tool Screen automation.</string>
+  <string name="accessibility_service_summary">Memungkinkan Rikka Agent mengetuk, menggeser, scroll, membaca konten layar, dan mengambil screenshot saat LLM menggunakan tool Screen automation.</string>
   <string name="ackai_description">Semua model AI utama tersedia! Tanpa VPN! 50%% dari harga resmi!\nWebsite: [ackai.fun](https://ackai.fun/register?aff=jxpP)</string>
   <string name="add">Tambah</string>
   <string name="aihubmix_description">Menyediakan layanan high-concurrency dan stabil untuk model mainstream seperti OpenAI, Claude, Google Gemini.\nWebsite: [aihubmix.com](https://aihubmix.com?aff=pG7r)\nTop-up: [console.aihubmix.com/topup](https://console.aihubmix.com/topup)</string>
@@ -323,7 +323,7 @@
   <string name="setting_page_notifications_whitelist_section">Whitelist auto-route</string>
   <string name="setting_page_notifications_whitelist_summary_zero">Tidak ada aplikasi diwhitelist</string>
   <string name="setting_page_permissions">Izin</string>
-  <string name="setting_page_permissions_desc">Daftar otomatis setiap izin yang digunakan RikkaHub, dengan tombol berikan satu ketukan untuk masing-masing.</string>
+  <string name="setting_page_permissions_desc">Daftar otomatis setiap izin yang digunakan Rikka Agent, dengan tombol berikan satu ketukan untuk masing-masing.</string>
   <string name="setting_page_permissions_group_auto">Otomatis diberikan</string>
   <string name="setting_page_permissions_group_runtime">Izin runtime</string>
   <string name="setting_page_permissions_group_services">Layanan dan integrasi</string>
@@ -400,7 +400,7 @@
   <string name="setting_page_tts_service_desc">Konfigurasi provider text-to-speech dan speech recognition</string>
   <string name="setting_page_tts_settings">Pengaturan TTS</string>
   <string name="setting_page_web_server">Web Server</string>
-  <string name="setting_page_web_server_desc">Akses RikkaHub via Web</string>
+  <string name="setting_page_web_server_desc">Akses Rikka Agent via Web</string>
   <string name="setting_page_web_server_error">Error</string>
   <string name="setting_page_web_server_jwt_enable">Aktifkan autentikasi</string>
   <string name="setting_page_web_server_lan_address">Alamat LAN</string>

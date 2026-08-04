@@ -22,7 +22,7 @@ private const val MODEL_CATALOG_ASSET_NAME = "catalog/lastchat_catalog.json"
  * at the repo-owned fork (R6) so the bundled icons resolve over raw.githubusercontent.com.
  */
 const val CATALOG_RAW_BASE_URL =
-    "https://raw.githubusercontent.com/udin-petot/Rikka-Agentic/master/catalog/"
+    "https://raw.githubusercontent.com/udin-petot/Rikka-Agent/master/catalog/"
 
 @Serializable
 data class LastChatCatalog(

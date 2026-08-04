@@ -27,7 +27,7 @@ const val SUPPORTED_CATALOG_SCHEMA_VERSION = 2
  * download is a silent no-op and the bundled asset stays authoritative.
  */
 const val MODEL_CATALOG_URL =
-    "https://raw.githubusercontent.com/udin-petot/Rikka-Agentic/master/catalog/lastchat_catalog.json"
+    "https://raw.githubusercontent.com/udin-petot/Rikka-Agent/master/catalog/lastchat_catalog.json"
 
 enum class ModelCatalogSource {
     BUNDLED,

@@ -1,23 +1,23 @@
 <div align="center">
 
-<img src="docs/icon.png" width="96" height="96" alt="RikkaHub Agent" style="border-radius: 24px" />
+<img src="docs/icon.png" width="96" height="96" alt="Rikka Agent" style="border-radius: 24px" />
 
-# RikkaHub Agent
+# Rikka Agent
 
 **Your phone, automated.**
 
-A fork of [RikkaHub](https://github.com/rikkahub/rikkahub) that turns the native Android LLM chat client into a real on-device agent: 80+ device tools, AI-authored workflows, scheduled jobs, an in-app browser the AI drives, SSH, screen automation, file manager, music player, voice transcription, downloadable on-device LLMs, and a remote Telegram bot. All opt-in.
+An Android native autonomous agent runtime (Kotlin + Jetpack Compose), forked from [RikkaHub](https://github.com/rikkahub/rikkahub) and [rikkahub-agent](https://github.com/ExTV/rikkahub-agent). Turns your phone into a local AI agent: 80+ device tools, AI-authored workflows, scheduled jobs, an in-app browser the AI drives, SSH, screen automation, slash commands, permanent memory, self-improving skills, and a remote Telegram bot. All opt-in.
 
 <p>
-  <a href="https://github.com/ExTV/rikkahub-agent/releases"><img src="https://img.shields.io/github/v/release/ExTV/rikkahub-agent?include_prereleases&style=flat-square&label=release&color=blue" alt="Release" /></a>
-  <a href="https://github.com/ExTV/rikkahub-agent/releases"><img src="https://img.shields.io/github/downloads/ExTV/rikkahub-agent/total?style=flat-square&color=brightgreen" alt="Downloads" /></a>
-  <a href="https://github.com/ExTV/rikkahub-agent/stargazers"><img src="https://img.shields.io/github/stars/ExTV/rikkahub-agent?style=flat-square&color=yellow" alt="Stars" /></a>
+  <a href="https://github.com/udin-petot/Rikka-Agent/releases"><img src="https://img.shields.io/github/v/release/udin-petot/Rikka-Agent?include_prereleases&style=flat-square&label=release&color=blue" alt="Release" /></a>
+  <a href="https://github.com/udin-petot/Rikka-Agent/releases"><img src="https://img.shields.io/github/downloads/udin-petot/Rikka-Agent/total?style=flat-square&color=brightgreen" alt="Downloads" /></a>
+  <a href="https://github.com/udin-petot/Rikka-Agent/stargazers"><img src="https://img.shields.io/github/stars/udin-petot/Rikka-Agent?style=flat-square&color=yellow" alt="Stars" /></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 8+" />
+  <img src="https://img.shields.io/badge/language-English%20%2B%20Bahasa%20Indonesia-3DDC84?style=flat-square" alt="English + Bahasa Indonesia" />
 </p>
 
-<a href="https://extv.github.io/rikkahub-agent/">Website</a> ·
-<a href="https://github.com/ExTV/rikkahub-agent/releases/latest">Download</a> ·
 <a href="#features">Features</a> ·
+<a href="#what-makes-this-fork-different">Fork Highlights</a> ·
 <a href="#quick-start">Quick Start</a> ·
 <a href="#building-from-source">Build</a>
 
@@ -37,9 +37,35 @@ Tell it what to do in plain language. The phone runs it in the background while 
 > *"Use Termux to build me a webpage listing everything you can do, then open it in my browser."*
 > *"When I plug in headphones at home WiFi after 7pm, start my evening playlist."*
 > *"Open my router's admin page, sign in with the saved password, and tell me which devices are eating the most bandwidth right now."*
-> *"Spin up two researches in parallel: one finds the cheapest one-way flight to Tokyo this month, the other lists hotels in Shibuya under $100."*
 
 Each of those is a one-line setup.
+
+---
+
+## What makes this fork different?
+
+**Rikka Agent** builds on the upstream `rikkahub-agent` with a focus on making the agent truly autonomous and self-improving, plus a modern, accessible UI:
+
+### Model Catalog (001)
+- **62+ provider presets** with icons in a browsable catalog — one-tap add, no manual config
+- **Auto-detected capabilities** — badge per model (chat, vision, tool calling, reasoning)
+- **Network catalog updates** — new providers arrive without an app update (24h auto-refresh)
+- **Per-model overrides** — edit type, modality, and abilities per model
+
+### Agent Self-Improvement (002)
+- **Rich slash commands** — `/help`, `/new`, `/clear`, `/model`, `/memory`, `/doctor`, `/undo` — shared engine between the in-app chat **and** the Telegram bot
+- **Permanent memory** — the agent maintains a global memory across sessions (all memory features ON by default)
+- **Session recall** — `conversation_search` + `recent_chats` tools so the agent remembers past conversations
+- **Learning from mistakes** — when a tool call fails, a lesson is captured and injected into future prompts
+- **Self-improving skills** — skills declare `triggers:` and `commands:` in frontmatter; the agent auto-loads relevant skills and can offer to save a procedure skill (approval-gated)
+
+### English-First + Bahasa Indonesia (003)
+- **English by default** — no more Chinese-only UI
+- **Bahasa Indonesia locale** — full Indonesian translation (technical terms stay English)
+- **13-language picker** — English, Bahasa Indonesia, Chinese (simplified/traditional), Japanese, Korean, Russian, Arabic, and more
+
+### Everything upstream has
+Device control (80+ tools), workflows & schedules, Telegram bot, in-app AI-driven browser, file manager, SSH, music & media, skills, sub-agents, Doctor, MCP servers, notifications & external triggers, 3-layer safety.
 
 ---
 
@@ -103,7 +129,7 @@ Three layers of protection:
 2. **Per-call approval** — Tools that change something ask before running.
 3. **HARDLINE floor** — Genuinely dangerous commands (wipe, reboot, fork bombs, system file destruction) are blocked unconditionally.
 
-Passwords and API keys never hit log files. Cloud backups skip saved credentials. The Telegram bot ignores everyone except your allowlist.
+Passwords and API keys never hit log files. Cloud backups skip saved credentials. The Telegram bot ignores everyone except your allowlist. **Zero telemetry** — no analytics, no Firebase, nothing phoning home.
 
 ---
 
@@ -111,11 +137,11 @@ Passwords and API keys never hit log files. Cloud backups skip saved credentials
 
 ### 1. Install
 
-Download the latest `*-release.apk` from [Releases](https://github.com/ExTV/rikkahub-agent/releases/latest). Allow install from unknown sources, then open.
+Download the latest APK from [Releases](https://github.com/udin-petot/Rikka-Agent/releases/latest). Pick `app-arm64-v8a` for most phones, `app-universal` if unsure. Allow install from unknown sources, then open.
 
-> **Note:** If you have an old debug build installed, uninstall it first — the release build is signed differently.
+> **Note:** If you have an old debug build installed, uninstall it first — release builds are signed differently.
 
-> **Upgrading from before `2.3.1-agent.0`?** The app ID changed to `excp.rikkahub` so the fork installs alongside upstream RikkaHub. To migrate your data: open the old app → Settings → Backup → install this release → restore the backup.
+> **App ID:** `excp.rikkahub` — Rikka Agent installs alongside upstream RikkaHub, so you can run both side by side.
 
 ### 2. Add an LLM Provider
 
@@ -126,12 +152,11 @@ Download the latest `*-release.apk` from [Releases](https://github.com/ExTV/rikk
 - **Grok** — sign in with your xAI account (SuperGrok or X Premium+ over OAuth)
 - **Local · LiteRT** — download a local model (Gemma, Qwen). No key, no network. Runs on-device with GPU acceleration where supported
 - **AICore** — Pixel 8/9/10 users can enable Gemini Nano for on-device inference (currently requires the AICore Beta)
+- **Model Catalog** — browse 62+ providers in Settings → Models → Catalog, one-tap add
 
 ### 3. Turn On What You Want
 
-**Settings → Assistants → tap your assistant → Local Tools** — flip the categories you want enabled.
-
-If you don't turn anything on, the app behaves exactly like vanilla RikkaHub.
+**Settings → Assistants → tap your assistant → Local Tools** — flip the categories you want enabled. Memory, session recall, and learning features are ON by default — opt out per assistant whenever you like.
 
 ### 4. (Optional) Telegram Bot
 
@@ -148,45 +173,24 @@ If you don't turn anything on, the app behaves exactly like vanilla RikkaHub.
 | **Architecture** | arm64 or x86_64 |
 | **Android** | 8.0+ (API 26), targets API 37 |
 | **Storage** | ~80 MB |
-| **LLM Provider** | OpenAI, Google, Anthropic, OpenRouter, Codex, Grok, Ollama, or any OpenAI-compatible endpoint. OR Gemini Nano via AICore on Pixel 8/9/10+ |
-
----
-
-## Languages
-
-The interface ships in **English, 简体中文, 繁體中文, 日本語, 한국어, Русский, and العربية**. The app follows your system language and falls back to English. RTL languages (Arabic, Persian, Urdu) render correctly in chat — code blocks stay LTR.
+| **Language** | English (default) · Bahasa Indonesia · 中文 · 日本語 · 한국어 · Русский · العربية |
 
 ---
 
 ## Building from Source
 
-Requires [bun](https://bun.sh) and [pnpm](https://pnpm.io) on your PATH — bun installs the web-ui dependencies, pnpm builds the bundle.
-
 ```bash
-git clone https://github.com/ExTV/rikkahub-agent.git
-cd rikkahub-agent
-./gradlew :app:installDebug
+git clone https://github.com/udin-petot/Rikka-Agent.git
+cd Rikka-Agent
+./gradlew :app:assembleDebug
 ```
 
----
-
-## Credits
-
-Stands on the shoulders of giants:
-
-| Project | Role |
-|---|---|
-| [RikkaHub](https://github.com/rikkahub/rikkahub) | The upstream chat client this forks |
-| [cron-utils](https://github.com/jmrozanec/cron-utils) | Cron parser for the scheduler |
-| [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | On-device speech-to-text via Termux |
-| [Termux](https://github.com/termux/termux-app) | Shell + package manager |
-| [JSch (mwiede fork)](https://github.com/mwiede/jsch) | Native SSH client |
-| [FlorisBoard](https://github.com/florisboard/florisboard) | Base for the companion [agent-keyboard](https://github.com/ExTV/agent-keyboard) |
-
-This fork is unaffiliated with upstream RikkaHub maintainers. All credit for the underlying chat client, provider abstraction, and UI design goes to the upstream team.
+APK output: `app/build/outputs/apk/`. First build is slow (Gradle distribution + deps + web-ui once).
 
 ---
 
 ## License
 
-Inherited from [upstream](https://github.com/rikkahub/rikkahub), see [LICENSE](LICENSE).
+AGPL v3 — free for personal / non-commercial use (≤10 users). Commercial use requires a separate license. See [LICENSE](LICENSE).
+
+**Attribution:** This project is a fork of [RikkaHub](https://github.com/rikkahub/rikkahub) (by [rikkahub](https://github.com/rikkahub)) and [rikkahub-agent](https://github.com/ExTV/rikkahub-agent) (by [ExTV](https://github.com/ExTV)). UI ideas from [LastChat](https://github.com/Cocolalilal/LastChat), architecture lessons from [AmberAgent](https://github.com/soul99soul-glitch/AmberAgent). All upstream license and attribution notices preserved.
