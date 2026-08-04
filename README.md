@@ -46,20 +46,20 @@ Each of those is a one-line setup.
 
 **Rikka Agent** builds on the upstream `rikkahub-agent` with a focus on making the agent truly autonomous and self-improving, plus a modern, accessible UI:
 
-### Model Catalog (001)
+### Model Catalog
 - **62+ provider presets** with icons in a browsable catalog — one-tap add, no manual config
 - **Auto-detected capabilities** — badge per model (chat, vision, tool calling, reasoning)
 - **Network catalog updates** — new providers arrive without an app update (24h auto-refresh)
 - **Per-model overrides** — edit type, modality, and abilities per model
 
-### Agent Self-Improvement (002)
+### Agent Self-Improvement
 - **Rich slash commands** — `/help`, `/new`, `/clear`, `/model`, `/memory`, `/doctor`, `/undo` — shared engine between the in-app chat **and** the Telegram bot
 - **Permanent memory** — the agent maintains a global memory across sessions (all memory features ON by default)
 - **Session recall** — `conversation_search` + `recent_chats` tools so the agent remembers past conversations
 - **Learning from mistakes** — when a tool call fails, a lesson is captured and injected into future prompts
 - **Self-improving skills** — skills declare `triggers:` and `commands:` in frontmatter; the agent auto-loads relevant skills and can offer to save a procedure skill (approval-gated)
 
-### English-First + Bahasa Indonesia (003)
+### English + Bahasa Indonesia 
 - **English by default** — no more Chinese-only UI
 - **Bahasa Indonesia locale** — full Indonesian translation (technical terms stay English)
 - **13-language picker** — English, Bahasa Indonesia, Chinese (simplified/traditional), Japanese, Korean, Russian, Arabic, and more
