@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.pages.setting
 
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Image02
+import me.rerere.hugeicons.stroke.Clean
 import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,8 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,10 +74,13 @@ fun SettingFilesPage(
     // 预先获取字符串资源
     val deletedToast = stringResource(R.string.setting_files_page_deleted_toast)
     val deleteFailedToast = stringResource(R.string.setting_files_page_delete_failed_toast)
+    val cleanedToast = stringResource(R.string.setting_files_page_cleaned_toast)
+    val cleanFailedToast = stringResource(R.string.setting_files_page_clean_failed_toast)
 
     var selectedFolder by remember { mutableStateOf(FileFolders.UPLOAD) }
     var pendingDelete by remember { mutableStateOf<ManagedFileEntity?>(null) }
-    val files by filesManager.observe(selectedFolder).collectAsStateWithLifecycle(initialValue = emptyList())
+    var showCleanDialog by remember { mutableStateOf(false) }
+    val files by filesManager.observe(selectedFolder).collectAsState(initial = emptyList())
 
     if (pendingDelete != null) {
         val target = pendingDelete!!
@@ -109,11 +113,48 @@ fun SettingFilesPage(
         )
     }
 
+    if (showCleanDialog) {
+        AlertDialog(
+            onDismissRequest = { showCleanDialog = false },
+            title = { Text(stringResource(R.string.setting_files_page_clean_title)) },
+            text = { Text(stringResource(R.string.setting_files_page_clean_confirmation)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCleanDialog = false
+                        scope.launch {
+                            val ok = filesManager.deleteAll(selectedFolder)
+                            toaster.show(if (ok) cleanedToast else cleanFailedToast)
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.setting_files_page_clean_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCleanDialog = false }) {
+                    Text(stringResource(R.string.setting_files_page_cancel_action))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.setting_files_page_title)) },
                 navigationIcon = { BackButton() },
+                actions = {
+                    IconButton(
+                        onClick = { showCleanDialog = true },
+                        enabled = files.isNotEmpty(),
+                    ) {
+                        Icon(
+                            imageVector = HugeIcons.Clean,
+                            contentDescription = stringResource(R.string.setting_files_page_clean_content_description),
+                        )
+                    }
+                },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors
             )

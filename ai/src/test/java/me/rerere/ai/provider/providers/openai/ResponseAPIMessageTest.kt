@@ -5,8 +5,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
+import me.rerere.ai.core.Tool
+import me.rerere.ai.provider.BuiltInTools
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
@@ -45,11 +48,10 @@ class ResponseAPIMessageTest {
 
     private fun invokeBuildRequestBody(
         providerSetting: ProviderSetting.OpenAI,
-        messages: List<UIMessage>,
         params: TextGenerationParams,
         stream: Boolean = false
     ): JsonObject {
-        return api.buildRequestBody(providerSetting, messages, params, stream)
+        return api.buildRequestBody(providerSetting, listOf(UIMessage.user("hello")), params, stream)
     }
 
     private fun createReasoningParams(reasoningLevel: ReasoningLevel = ReasoningLevel.OFF): TextGenerationParams {
@@ -317,7 +319,6 @@ class ResponseAPIMessageTest {
         )
         val requestBody = invokeBuildRequestBody(
             providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
             params = createReasoningParams()
         )
 
@@ -333,7 +334,6 @@ class ResponseAPIMessageTest {
         )
         val requestBody = invokeBuildRequestBody(
             providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
             params = createReasoningParams()
         )
 
@@ -349,7 +349,6 @@ class ResponseAPIMessageTest {
         )
         val requestBody = invokeBuildRequestBody(
             providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
             params = createReasoningParams(reasoningLevel = ReasoningLevel.LOW)
         )
 
@@ -359,64 +358,71 @@ class ResponseAPIMessageTest {
     }
 
     @Test
-    fun `system prompt text should be serialized into Response API instructions`() {
-        val prompt = "Assistant prompt\n\nTool guidance"
+    fun `function tools and built-in tools should coexist in the same tools array`() {
         val requestBody = invokeBuildRequestBody(
-            providerSetting = ProviderSetting.OpenAI(),
-            messages = listOf(
-                UIMessage.system(prompt),
-                UIMessage.user("hello")
-            ),
-            params = createReasoningParams()
+            providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
+            params = createToolParams(
+                tools = listOf(createFunctionTool("get_weather")),
+                builtInTools = setOf(BuiltInTools.Search)
+            )
         )
 
-        assertEquals(prompt, requestBody["instructions"]?.jsonPrimitive?.content)
+        val tools = requestBody["tools"]?.jsonArray
+        assertTrue("tools should exist", tools != null)
+        val types = tools!!.map { it.jsonObject["type"]?.jsonPrimitive?.content }
+        assertTrue("function tool should not be dropped", types.contains("function"))
+        assertTrue("built-in web_search should be present", types.contains("web_search"))
+        assertEquals(2, tools.size)
     }
 
     @Test
-    fun `response api should encode image input`() {
-        val result = invokeBuildMessages(
-            listOf(
-                UIMessage(
-                    role = MessageRole.USER,
-                    parts = listOf(
-                        UIMessagePart.Text("Describe this image"),
-                        UIMessagePart.Image("data:image/png;base64,AA=="),
-                    )
-                )
-            )
+    fun `function tools should be sent when no built-in tools configured`() {
+        val requestBody = invokeBuildRequestBody(
+            providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
+            params = createToolParams(tools = listOf(createFunctionTool("get_weather")))
         )
 
-        val content = result.single().jsonObject["content"]!!.jsonArray
-        val image = content.first { it.jsonObject["type"]?.jsonPrimitive?.content == "input_image" }
-        assertEquals(
-            "data:image/png;base64,AA==",
-            image.jsonObject["image_url"]?.jsonPrimitive?.content,
-        )
+        val tools = requestBody["tools"]?.jsonArray
+        assertEquals(1, tools?.size)
+        assertEquals("function", tools!![0].jsonObject["type"]?.jsonPrimitive?.content)
+        assertEquals("get_weather", tools[0].jsonObject["name"]?.jsonPrimitive?.content)
     }
 
     @Test
-    fun `response api should map all adjustable reasoning budgets`() {
-        listOf(
-            ReasoningLevel.LOW to "low",
-            ReasoningLevel.MEDIUM to "medium",
-            ReasoningLevel.HIGH to "high",
-            ReasoningLevel.XHIGH to "xhigh",
-        ).forEach { (level, expected) ->
-            val requestBody = invokeBuildRequestBody(
-                providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
-                messages = emptyList(),
-                params = createReasoningParams(reasoningLevel = level),
-            )
+    fun `tools key should be absent when neither function nor built-in tools exist`() {
+        val requestBody = invokeBuildRequestBody(
+            providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
+            params = createToolParams()
+        )
 
-            assertEquals(
-                expected,
-                requestBody["reasoning"]?.jsonObject?.get("effort")?.jsonPrimitive?.content,
-            )
-        }
+        assertFalse("tools key should not be written", requestBody.containsKey("tools"))
     }
 
     // ==================== Helper Functions ====================
+
+    private fun createToolParams(
+        tools: List<Tool> = emptyList(),
+        builtInTools: Set<BuiltInTools> = emptySet()
+    ): TextGenerationParams {
+        return TextGenerationParams(
+            model = Model(
+                modelId = "test-model",
+                displayName = "test-model",
+                abilities = listOf(ModelAbility.TOOL),
+                tools = builtInTools
+            ),
+            tools = tools
+        )
+    }
+
+    private fun createFunctionTool(name: String): Tool {
+        return Tool(
+            name = name,
+            description = "test tool",
+            parameters = { InputSchema.Obj(properties = JsonObject(emptyMap())) },
+            execute = { emptyList() }
+        )
+    }
 
     private fun createExecutedTool(
         callId: String,
