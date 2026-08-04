@@ -1991,4 +1991,6 @@
        agent author + writes a procedure skill via the approval-gated skill_install_from_text
        tool. No automatic write — only the offer surface. -->
   <string name="chat_skill_self_improvement_offer">Save this workflow as a reusable procedure skill?</string>
+  <string name="theme_name_claude">Claude</string>
+  <string name="theme_name_minimal">Minimal</string>
 </resources>

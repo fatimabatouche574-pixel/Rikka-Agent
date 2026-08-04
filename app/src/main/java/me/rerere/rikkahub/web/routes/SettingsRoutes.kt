@@ -127,14 +127,10 @@ fun Route.settingsRoutes(
 
         post("/search/enabled") {
             val request = call.receive<UpdateSearchEnabledRequest>()
-            val assistantId = request.assistantId.toUuid("assistantId")
 
-            val settings = settingsStore.settingsFlow.value
-            if (settings.assistants.none { it.id == assistantId }) {
-                throw NotFoundException("Assistant not found")
+            settingsStore.update { settings ->
+                settings.copy(enableWebSearch = request.enabled)
             }
-
-            settingsStore.updateAssistantWebSearch(assistantId, request.enabled)
             call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
         }
 
