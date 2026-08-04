@@ -14,12 +14,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.rikkahub.R
@@ -53,6 +55,8 @@ fun SettingLanguagePage(vm: SettingVM = koinViewModel()) {
     val context = LocalContext.current
     val currentLanguage = settings.appLanguage
 
+    val scope = rememberCoroutineScope()
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -82,10 +86,12 @@ fun SettingLanguagePage(vm: SettingVM = koinViewModel()) {
                 ) {
                     LANGUAGE_OPTIONS.forEach { option ->
                         item(
-                            onClick = {
-                                vm.setAppLanguage(option.tag)
-                                (context as? Activity)?.recreate()
-                            },
+                                                    onClick = {
+                                                        scope.launch {
+                                                            vm.setAppLanguage(option.tag)
+                                                            (context as? Activity)?.recreate()
+                                                        }
+                                                    },
                             headlineContent = {
                                 Text(stringResource(option.labelRes))
                             },

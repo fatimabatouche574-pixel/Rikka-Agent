@@ -157,23 +157,23 @@ fun SettingAboutPage() {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         item(
-                            onClick = { context.openUrl("https://rikka-ai.com/") },
-                            leadingContent = { Icon(HugeIcons.Earth, null) },
-                            supportingContent = { Text("https://rikka-ai.com") },
-                            headlineContent = { Text(stringResource(R.string.about_page_website)) },
-                        )
-                        item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub") },
-                            leadingContent = { Icon(HugeIcons.Github, null) },
-                            supportingContent = { Text("https://github.com/rikkahub/rikkahub") },
-                            headlineContent = { Text(stringResource(R.string.about_page_github)) },
-                        )
-                        item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
-                            leadingContent = { Icon(HugeIcons.File02, null) },
-                            supportingContent = { Text("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
-                            headlineContent = { Text(stringResource(R.string.about_page_license)) },
-                        )
+                                                    onClick = { context.openUrl("https://github.com/udin-petot/Rikka-Agent") },
+                                                    leadingContent = { Icon(HugeIcons.Earth, null) },
+                                                    supportingContent = { Text("https://github.com/udin-petot/Rikka-Agent") },
+                                                    headlineContent = { Text(stringResource(R.string.about_page_website)) },
+                                                )
+                                                item(
+                                                    onClick = { context.openUrl("https://github.com/udin-petot/Rikka-Agent") },
+                                                    leadingContent = { Icon(HugeIcons.Github, null) },
+                                                    supportingContent = { Text("https://github.com/udin-petot/Rikka-Agent") },
+                                                    headlineContent = { Text(stringResource(R.string.about_page_github)) },
+                                                )
+                                                item(
+                                                    onClick = { context.openUrl("https://github.com/udin-petot/Rikka-Agent/blob/master/LICENSE") },
+                                                    leadingContent = { Icon(HugeIcons.File02, null) },
+                                                    supportingContent = { Text("https://github.com/udin-petot/Rikka-Agent/blob/master/LICENSE") },
+                                                    headlineContent = { Text(stringResource(R.string.about_page_license)) },
+                                                )
                     }
                 }
             }
