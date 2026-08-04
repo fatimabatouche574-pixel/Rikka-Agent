@@ -25,9 +25,9 @@ auto_load: false
 
 ## Git workflow
 
-- `origin` = `udin-petot/Rikka-Agent` (public), branch `master`.
+- `origin` = your fork repo, branch `master`.
 - `upstream` = `ExTV/rikkahub-agent` — sync via `git fetch upstream && git merge upstream/master`.
-- Push: `git push origin HEAD:master` (not `git push origin master` — it silently no-ops in this setup).
+- Push: `git push origin HEAD:master`
 - `lastchat` = `Cocolalilal/LastChat` (UI reference), `amber` = `soul99soul-glitch/AmberAgent` (architecture reference).
 
 ## Build
