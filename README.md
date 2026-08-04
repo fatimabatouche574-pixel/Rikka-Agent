@@ -172,7 +172,7 @@ Download the latest APK from [Releases](https://github.com/udin-petot/Rikka-Agen
 |---|---|
 | **Architecture** | arm64 or x86_64 |
 | **Android** | 8.0+ (API 26), targets API 37 |
-| **Storage** | ~80 MB |
+| **Storage** | ~150 MB |
 | **Language** | English (default) · Bahasa Indonesia · 中文 · 日本語 · 한국어 · Русский · العربية |
 
 ---
