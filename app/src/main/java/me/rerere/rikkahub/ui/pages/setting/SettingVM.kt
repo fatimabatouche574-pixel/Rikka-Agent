@@ -24,9 +24,7 @@ class SettingVM(
         }
     }
 
-    fun setAppLanguage(tag: String) {
-        viewModelScope.launch {
-            settingsStore.setAppLanguage(tag)
-        }
+    suspend fun setAppLanguage(tag: String) {
+        settingsStore.setAppLanguage(tag)
     }
 }
