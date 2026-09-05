@@ -26,6 +26,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -72,8 +73,12 @@ class CodexVLRuntimeManager(
     fun configureAndroidTools(tools: List<Tool>) {
         androidTools = tools.mapNotNull { tool ->
             AndroidToolAliases.exposedName(tool.name)?.let { it to tool }
-        }.toMap()
+        }.toMap() + (ROOT_SHELL_EXPOSED_NAME to codexVLRootShellTool(context))
     }
+
+    private fun enabledAndroidTools(): Map<String, Tool> =
+        if (store.read().provider.rootAccessEnabled) androidTools
+        else androidTools - ROOT_SHELL_EXPOSED_NAME
 
     fun detect(config: CodexVLProviderConfig = store.read().provider): Detection {
         val file = runtimeFile(config)
@@ -314,7 +319,7 @@ class CodexVLRuntimeManager(
             put("name", "android")
             put("description", "Rikka Agent Android tools. All calls remain subject to Rikka permissions.")
             putJsonArray("tools") {
-                androidTools.forEach { (name, tool) ->
+                enabledAndroidTools().forEach { (name, tool) ->
                     add(buildJsonObject {
                         put("type", "function")
                         put("name", name)
@@ -336,15 +341,22 @@ class CodexVLRuntimeManager(
         val params = message["params"]?.jsonObject ?: return sendDynamicFailure(requestId, "Invalid tool request")
         val exposedName = params["tool"]?.jsonPrimitive?.contentOrNull
             ?: return sendDynamicFailure(requestId, "Missing tool name")
-        val tool = androidTools[exposedName]
-            ?: return sendDynamicFailure(requestId, "Android tool is unavailable")
+        val tool = enabledAndroidTools()[exposedName]
+            ?: return sendDynamicFailure(
+                requestId,
+                if (exposedName == ROOT_SHELL_EXPOSED_NAME) "Root access is disabled"
+                else "Android tool is unavailable",
+            )
         val arguments = params["arguments"] ?: JsonObject(emptyMap())
 
         if (tool.name == "termux_run_command") {
-            val command = runCatching {
-                arguments.jsonObject["command"]?.jsonPrimitive?.contentOrNull
+            val shellArgs = runCatching { arguments.jsonObject }.getOrNull() ?: JsonObject(emptyMap())
+            val command = runCatching { shellArgs["command"]?.jsonPrimitive?.contentOrNull }.getOrNull()
+            val executable = runCatching { shellArgs["executable"]?.jsonPrimitive?.contentOrNull }.getOrNull()
+            val executableArguments = runCatching {
+                shellArgs["arguments"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }
             }.getOrNull().orEmpty()
-            if (!CodexVLRootGuard.ordinaryShellAllowed(command)) {
+            if (!CodexVLRootGuard.ordinaryShellAllowed(command, executable, executableArguments)) {
                 return sendDynamicFailure(requestId, "Root elevation is not allowed through android.shell")
             }
         }
@@ -357,13 +369,32 @@ class CodexVLRuntimeManager(
             val decision = CompletableDeferred<Boolean>()
             localApprovals[approvalId] = decision
             val risk = when (tool.name) {
+                "android.root_shell" -> CodexVLEventMapper.Risk.CRITICAL
                 "termux_run_command" -> CodexVLEventMapper.Risk.HIGH
                 else -> CodexVLEventMapper.Risk.MEDIUM
             }
+            val approvalToolName = when (tool.name) {
+                "android.root_shell" -> "root_shell"
+                "termux_run_command" -> "shell"
+                else -> exposedName
+            }
+            val summary = if (tool.name == "android.root_shell") {
+                val rootArgs = runCatching { arguments.jsonObject }.getOrNull()
+                buildString {
+                    appendLine("CRITICAL root command")
+                    append("command: ")
+                    append(rootArgs?.get("command")?.jsonPrimitive?.contentOrNull.orEmpty())
+                    append("\nworking directory: ")
+                    append(rootArgs?.get("working_directory")?.jsonPrimitive?.contentOrNull
+                        ?: context.filesDir.absolutePath)
+                }
+            } else {
+                arguments.toString()
+            }
             _events.emit(CodexVLEventMapper.Event.WaitingForPermission(
                 requestId = approvalId,
-                toolName = if (tool.name == "termux_run_command") "shell" else exposedName,
-                summary = arguments.toString(),
+                toolName = approvalToolName,
+                summary = summary,
                 risk = risk,
             ))
             val allowed = try {
@@ -491,6 +522,7 @@ class CodexVLRuntimeManager(
         const val TURN_TIMEOUT_MS = 30L * 60L * 1_000L
         const val APPROVAL_TIMEOUT_MS = 10L * 60L * 1_000L
         const val LOCAL_APPROVAL_PREFIX = "local-"
+        const val ROOT_SHELL_EXPOSED_NAME = "root_shell"
     }
 }
 
