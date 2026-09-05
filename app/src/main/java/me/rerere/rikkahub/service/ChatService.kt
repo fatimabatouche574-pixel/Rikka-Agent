@@ -31,6 +31,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
@@ -69,6 +71,8 @@ import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.createConversationTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
 import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.codexvl.CodexVLEventMapper
+import me.rerere.rikkahub.data.codexvl.CodexVLRuntimeManager
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
 import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
@@ -89,6 +93,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.model.AgentRuntime
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.replaceRegexes
@@ -107,6 +112,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatService"
+private const val CODEX_APPROVAL_PREFIX = "codex:"
 
 internal fun backgroundTextGenerationParams(
     model: Model,
@@ -168,6 +174,7 @@ class ChatService(
     private val toolApprovalPreferences: me.rerere.rikkahub.data.preferences.ToolApprovalPreferences,
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
+    private val codexVLRuntimeManager: CodexVLRuntimeManager,
 ) {
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
@@ -628,6 +635,32 @@ class ChatService(
         scope: ApprovalScope = ApprovalScope.Once,
         toolName: String? = null,
     ) {
+        if (toolCallId.startsWith(CODEX_APPROVAL_PREFIX)) {
+            appScope.launch {
+                mutexFor(conversationId).withLock {
+                    ensureHydrated(conversationId)
+                    val current = getConversationFlow(conversationId).value
+                    val decision = if (approved) ToolApprovalState.Approved else ToolApprovalState.Denied(reason)
+                    val updated = current.copy(
+                        messageNodes = current.messageNodes.map { node ->
+                            node.copy(messages = node.messages.map { message ->
+                                message.copy(parts = message.parts.map { part ->
+                                    if (part is UIMessagePart.Tool && part.toolCallId == toolCallId && part.isPending) {
+                                        part.copy(approvalState = decision)
+                                    } else part
+                                })
+                            })
+                        }
+                    )
+                    saveConversation(conversationId, updated)
+                    codexVLRuntimeManager.resolveApproval(
+                        toolCallId.removePrefix(CODEX_APPROVAL_PREFIX),
+                        allowOnce = approved,
+                    )
+                }
+            }
+            return
+        }
         val session = getOrCreateSession(conversationId)
         val convMutex = mutexFor(conversationId)
 
@@ -751,6 +784,128 @@ class ChatService(
 
     // ---- 处理消息补全 ----
 
+    private suspend fun handleCodexVLMessage(
+        conversationId: Uuid,
+        initialConversation: Conversation,
+    ) {
+        val userText = initialConversation.currentMessages
+            .lastOrNull { it.role == MessageRole.USER }
+            ?.toText()
+            ?.takeIf(String::isNotBlank)
+            ?: throw IllegalArgumentException("Codex-VL requires a text prompt")
+        val runtimeConfig = codexVLRuntimeManager.currentConfig()
+        if (!runtimeConfig.enabled) throw IllegalStateException("Codex-VL is disabled in Settings")
+
+        val response = UIMessage(role = MessageRole.ASSISTANT, parts = emptyList())
+        saveConversation(
+            conversationId,
+            initialConversation.copy(
+                chatSuggestions = emptyList(),
+                messageNodes = initialConversation.messageNodes + response.toMessageNode(),
+            ),
+        )
+        val session = getOrCreateSession(conversationId)
+
+        if (runtimeConfig.androidToolsEnabled) {
+            val invocationContext = me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
+                callerAssistantId = initialConversation.assistantId.toString(),
+                callerConversationId = conversationId.toString(),
+                isHeadless = me.rerere.rikkahub.data.ai.tools.HeadlessConversations.isHeadless(conversationId),
+                modelCanSeeImages = true,
+            )
+            val assistant = settingsStore.settingsFlow.value.getAssistantById(initialConversation.assistantId)
+            codexVLRuntimeManager.configureAndroidTools(
+                localTools.getTools(assistant?.localTools ?: emptyList(), invocationContext)
+            )
+        } else {
+            codexVLRuntimeManager.configureAndroidTools(emptyList())
+        }
+
+        fun updateResponse(transform: (UIMessage) -> UIMessage) {
+            val current = getConversationFlow(conversationId).value
+            val messages = current.currentMessages.map { message ->
+                if (message.id == response.id) transform(message) else message
+            }
+            updateConversation(conversationId, current.updateCurrentMessages(messages))
+        }
+
+        codexVLRuntimeManager.runTurn(
+            conversationId = conversationId.toString(),
+            text = userText,
+            cwd = initialConversation.workspaceCwd ?: context.filesDir.absolutePath,
+        ) { event ->
+            when (event) {
+                CodexVLEventMapper.Event.Thinking -> session.processingStatus.value = "Thinking"
+                is CodexVLEventMapper.Event.ReasoningSummary -> updateResponse { message ->
+                    val last = message.parts.lastOrNull()
+                    val parts = if (last is UIMessagePart.Reasoning) {
+                        message.parts.dropLast(1) + last.copy(reasoning = last.reasoning + event.text)
+                    } else {
+                        message.parts + UIMessagePart.Reasoning(reasoning = event.text, finishedAt = null)
+                    }
+                    message.copy(parts = parts)
+                }
+                is CodexVLEventMapper.Event.RunningCommand -> {
+                    session.processingStatus.value = "Running: ${event.command.take(160)}"
+                }
+                is CodexVLEventMapper.Event.EditingFile -> {
+                    session.processingStatus.value = "Editing: ${event.path ?: "file"}"
+                }
+                is CodexVLEventMapper.Event.AndroidTool -> {
+                    session.processingStatus.value = "Android tool: ${event.name}"
+                }
+                is CodexVLEventMapper.Event.WaitingForPermission -> {
+                    val isRoot = event.risk == CodexVLEventMapper.Risk.CRITICAL
+                    val approvalState = if (isRoot && !runtimeConfig.rootAccessEnabled) {
+                        codexVLRuntimeManager.resolveApproval(event.requestId, allowOnce = false)
+                        ToolApprovalState.Denied("Root access is disabled")
+                    } else {
+                        session.processingStatus.value = "Waiting for permission"
+                        ToolApprovalState.Pending
+                    }
+                    val name = when {
+                        isRoot -> "android.root_shell"
+                        event.toolName == "file_change" -> "codex_file_change"
+                        event.toolName == "shell" -> "codex_shell"
+                        else -> "android.${event.toolName}"
+                    }
+                    val input = buildJsonObject {
+                        put("summary", event.summary)
+                        put("risk", event.risk.name)
+                    }.toString()
+                    updateResponse { message ->
+                        message.copy(parts = message.parts + UIMessagePart.Tool(
+                            toolCallId = CODEX_APPROVAL_PREFIX + event.requestId,
+                            toolName = name,
+                            input = input,
+                            approvalState = approvalState,
+                        ))
+                    }
+                    saveConversation(conversationId, getConversationFlow(conversationId).value)
+                }
+                is CodexVLEventMapper.Event.MessageDelta -> updateResponse { message ->
+                    val last = message.parts.lastOrNull()
+                    val parts = if (last is UIMessagePart.Text) {
+                        message.parts.dropLast(1) + last.copy(text = last.text + event.text)
+                    } else {
+                        message.parts + UIMessagePart.Text(event.text)
+                    }
+                    message.copy(parts = parts)
+                }
+                CodexVLEventMapper.Event.Completed -> session.processingStatus.value = "Completed"
+                is CodexVLEventMapper.Event.Failed -> session.processingStatus.value = "Failed"
+            }
+        }.getOrThrow()
+
+        session.processingStatus.value = null
+        val final = getConversationFlow(conversationId).value.updateCurrentMessages(
+            getConversationFlow(conversationId).value.currentMessages.map { message ->
+                if (message.id == response.id) message.finishReasoning() else message
+            }
+        )
+        saveConversation(conversationId, final)
+    }
+
     private suspend fun handleMessageComplete(
         conversationId: Uuid,
         messageRange: ClosedRange<Int>? = null
@@ -763,6 +918,10 @@ class ChatService(
         val initialConversation = getConversationFlow(conversationId).value
         val assistant = settings.getAssistantById(initialConversation.assistantId)
             ?: settings.getCurrentAssistant()
+        if (assistant.agentRuntime == AgentRuntime.CODEX_VL) {
+            handleCodexVLMessage(conversationId, initialConversation)
+            return
+        }
         val model = settings.findModelById(assistant.chatModelId ?: settings.chatModelId)
             ?: throw IllegalStateException(
                 "No chat model selected. Pick one in Settings → Default models, or send /model in Telegram."

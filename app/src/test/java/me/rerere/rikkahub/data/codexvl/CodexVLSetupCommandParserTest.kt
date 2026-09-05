@@ -33,7 +33,9 @@ class CodexVLSetupCommandParserTest {
     @Test
     fun `parses line continuations and unicode model ids`() {
         val parsed = success(
-            "curl -s https://host/setup.sh | bash -s -- \\\n+              --url https://api.host/codex \\\n+              --key secret --model 模型-v1"
+            "curl -s https://host/setup.sh | bash -s -- \\\n" +
+                "  --url https://api.host/codex \\\n" +
+                "  --key secret --model 模型-v1"
         )
         assertEquals("模型-v1", parsed.model)
     }

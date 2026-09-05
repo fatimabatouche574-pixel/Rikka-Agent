@@ -39,6 +39,7 @@ import me.rerere.ai.provider.ModelType
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.model.AgentRuntime
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -141,6 +142,25 @@ internal fun AssistantBasicContent(
         Card(
             colors = CustomColors.cardColorsOnSurfaceContainer
         ) {
+            FormItem(
+                modifier = Modifier.padding(8.dp),
+                label = { Text(stringResource(R.string.assistant_page_agent_runtime)) },
+                description = { Text(stringResource(R.string.assistant_page_agent_runtime_desc)) },
+            ) {
+                Select(
+                    options = AgentRuntime.entries,
+                    selectedOption = assistant.agentRuntime,
+                    onOptionSelected = { onUpdate(assistant.copy(agentRuntime = it)) },
+                    optionToString = {
+                        when (it) {
+                            AgentRuntime.RIKKA_NATIVE -> stringResource(R.string.assistant_page_runtime_native)
+                            AgentRuntime.CODEX_VL -> stringResource(R.string.assistant_page_runtime_codex_vl)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            HorizontalDivider()
             FormItem(
                 label = {
                     Text(stringResource(R.string.assistant_page_name))

@@ -26,6 +26,9 @@ import me.rerere.rikkahub.data.codex.CodexAccountRepository
 import me.rerere.rikkahub.data.codex.CodexCredentialStore
 import me.rerere.rikkahub.data.codex.CodexOAuthManager
 import me.rerere.rikkahub.data.codex.CodexProvider
+import me.rerere.rikkahub.data.codexvl.CodexVLConfigStore
+import me.rerere.rikkahub.data.codexvl.CodexVLConnectionTester
+import me.rerere.rikkahub.data.codexvl.CodexVLRuntimeManager
 import me.rerere.rikkahub.data.grok.GrokAccountRepository
 import me.rerere.rikkahub.data.grok.GrokCredentialStore
 import me.rerere.rikkahub.data.grok.GrokOAuthManager
@@ -215,11 +218,11 @@ val dataSourceModule = module {
             .addNetworkInterceptor(RequestLoggingInterceptor())
             .addInterceptor(AIRequestInterceptor())
             .apply {
-                // HEADERS-level logging prints Authorization: Bearer <api-key> to logcat.
-                // Debug-only so release builds never leak provider keys to logcat.
+                // Never log headers: debug builds also handle real provider credentials.
+                // BASIC retains method/URL/status/duration without Authorization or Cookie.
                 if (BuildConfig.DEBUG) {
                     addInterceptor(HttpLoggingInterceptor().apply {
-                        level = HttpLoggingInterceptor.Level.HEADERS
+                        level = HttpLoggingInterceptor.Level.BASIC
                     })
                 }
             }
@@ -284,6 +287,17 @@ val dataSourceModule = module {
             scope = get<AppScope>(),
             client = get(named("codex")),
             repository = get(),
+        )
+    }
+
+    single { CodexVLConfigStore(context = get(), json = get()) }
+    single { CodexVLConnectionTester(client = get(named("codex")), json = get()) }
+    single {
+        CodexVLRuntimeManager(
+            context = get(),
+            store = get(),
+            json = get(),
+            scope = get<AppScope>(),
         )
     }
 

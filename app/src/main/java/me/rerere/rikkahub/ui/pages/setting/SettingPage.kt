@@ -295,6 +295,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_browser)) },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingCodexVL) },
+                        leadingContent = { Icon(HugeIcons.Console, null) },
+                        supportingContent = { Text(stringResource(R.string.codex_vl_setting_desc)) },
+                        headlineContent = { Text(stringResource(R.string.codex_vl_title)) },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.SettingTermux) },
                         leadingContent = { Icon(HugeIcons.Console, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_termux_desc)) },

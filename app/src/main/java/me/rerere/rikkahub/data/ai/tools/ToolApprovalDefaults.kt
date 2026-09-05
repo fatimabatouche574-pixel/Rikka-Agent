@@ -29,6 +29,9 @@ object ToolApprovalDefaults {
     val ALWAYS_ASK: Set<String> = setOf(
         // Shell / arbitrary code execution
         "termux_run_command",
+        "codex_shell",
+        "codex_file_change",
+        "android.root_shell",
         "termux_session_start",  // opens a persistent interactive shell; the meaningful consent moment
         "transcribe_audio_file",  // shells out to whisper-cli via Termux; reads arbitrary audio files
         "eval_javascript",
@@ -253,6 +256,9 @@ object ToolApprovalDefaults {
      * read this set when rendering the keyboard.
      */
     val NO_ALWAYS_ALLOW: Set<String> = setOf(
+        "codex_shell",
+        "codex_file_change",
+        "android.root_shell",
         "mcp_add",
         "mcp_update",
         // eval_javascript runs arbitrary code in the QuickJS engine. Even with a wall-clock
