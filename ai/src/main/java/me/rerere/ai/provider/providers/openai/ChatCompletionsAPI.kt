@@ -92,11 +92,10 @@ class ChatCompletionsAPI(
             .configureReferHeaders(providerSetting.baseUrl)
             .build()
 
-        Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
 
         val response = client.newCall(request).await()
         if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
+            throw Exception("Provider request failed with HTTP ${response.code}")
         }
 
         val bodyStr = response.body.string()
@@ -150,7 +149,6 @@ class ChatCompletionsAPI(
             .configureReferHeaders(providerSetting.baseUrl)
             .build()
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
 
         // just for debugging response body
         // println(client.newCall(request).await().body.string())
@@ -163,11 +161,9 @@ class ChatCompletionsAPI(
                 data: String
             ) {
                 if (data == "[DONE]") {
-                    println("[onEvent] (done) 结束流: $data")
                     close()
                     return
                 }
-                Log.d(TAG, "onEvent: $data")
                 data
                     .trim()
                     .split("\n")
@@ -218,18 +214,16 @@ class ChatCompletionsAPI(
             override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
                 var exception = t
 
-                Log.w(TAG, "onFailure: ${t?.javaClass?.name} ${t?.message} / $response", t)
+                Log.w(TAG, "stream request failed (${t?.javaClass?.simpleName ?: "unknown"})")
 
                 val bodyRaw = response?.body?.stringSafe()
                 try {
                     if (!bodyRaw.isNullOrBlank()) {
                         val bodyElement = Json.parseToJsonElement(bodyRaw)
-                        Log.d(TAG, "onFailure: error body $bodyElement")
                         exception = bodyElement.parseErrorDetail()
-                        Log.i(TAG, "onFailure: $exception")
                     }
                 } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw", e)
+                    Log.w(TAG, "failed to parse provider error (${e.javaClass.simpleName})")
                     exception = e
                 } finally {
                     close(exception)
@@ -244,7 +238,6 @@ class ChatCompletionsAPI(
         val eventSource = EventSources.createFactory(client).newEventSource(request, listener)
 
         awaitClose {
-            println("[awaitClose] 关闭eventSource ")
             eventSource.cancel()
         }
         // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
@@ -398,6 +391,9 @@ class ChatCompletionsAPI(
                     "api.moonshot.cn" -> {
                         put("thinking", buildJsonObject {
                             put("type", if (!level.isEnabled) "disabled" else "enabled")
+                            if (level.isEnabled && params.model.modelId.equals("kimi-k2.6", ignoreCase = true)) {
+                                put("keep", "all")
+                            }
                         })
                     }
 
@@ -830,7 +826,7 @@ class ChatCompletionsAPI(
                                         put("url", encodedImage.base64)
                                     })
                                 }.onFailure {
-                                    Log.w(TAG, "encode tool result image failed: ${part.url}", it)
+                                    Log.w(TAG, "encode tool result image failed", it)
                                     put("type", "text")
                                     put("text", "Error: Failed to encode image to base64")
                                 }
@@ -960,6 +956,8 @@ class ChatCompletionsAPI(
             completionTokens = jsonObject["completion_tokens"]?.jsonPrimitive?.intOrNull ?: 0,
             totalTokens = jsonObject["total_tokens"]?.jsonPrimitive?.intOrNull ?: 0,
             cachedTokens = jsonObject["prompt_tokens_details"]?.jsonObjectOrNull?.get("cached_tokens")?.jsonPrimitive?.intOrNull
+                ?: jsonObject["cached_tokens"]?.jsonPrimitive?.intOrNull
+                ?: jsonObject["prompt_cache_hit_tokens"]?.jsonPrimitive?.intOrNull
                 ?: 0,
             // OpenRouter reports the generation cost (USD) here when the request asks for it
             // via usage:{include:true}. Other OpenAI-compatible providers omit it -> null.
