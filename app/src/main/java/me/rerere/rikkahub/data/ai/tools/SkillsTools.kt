@@ -8,14 +8,46 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.files.SkillContent
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.skills.SkillTriggerMatcher
+import java.io.File
+
+internal interface SkillToolBackend {
+    fun getContent(skillName: String): SkillContent?
+    fun readSkillBody(skillName: String): String?
+    fun readSkillFileCached(skillName: String, relativePath: String): String?
+    fun getSkillDir(skillName: String): File?
+    fun resolveSkillFile(skillName: String, relativePath: String): File?
+}
+
+private class SkillManagerToolBackend(
+    private val skillManager: SkillManager,
+) : SkillToolBackend {
+    override fun getContent(skillName: String): SkillContent? = skillManager.getContent(skillName)
+    override fun readSkillBody(skillName: String): String? = backend.readSkillBody(skillName)
+    override fun readSkillFileCached(skillName: String, relativePath: String): String? =
+        backend.readSkillFileCached(skillName, relativePath)
+    override fun getSkillDir(skillName: String): File? = backend.getSkillDir(skillName)
+    override fun resolveSkillFile(skillName: String, relativePath: String): File? =
+        backend.resolveSkillFile(skillName, relativePath)
+}
 
 fun createSkillTools(
     enabledSkills: Set<String>,
     allSkills: List<SkillMetadata>,
     skillManager: SkillManager,
+): List<Tool> = createSkillTools(
+    enabledSkills = enabledSkills,
+    allSkills = allSkills,
+    backend = SkillManagerToolBackend(skillManager),
+)
+
+internal fun createSkillTools(
+    enabledSkills: Set<String>,
+    allSkills: List<SkillMetadata>,
+    backend: SkillToolBackend,
 ): List<Tool> {
     val available = allSkills.filter { it.name in enabledSkills }
     if (available.isEmpty()) return emptyList()
@@ -26,7 +58,7 @@ fun createSkillTools(
         skillGetContentTool(
             enabledSkills = enabledSkills,
             allSkills = allSkills,
-            contentReader = skillManager::getContent,
+            contentReader = backend::getContent,
         ),
         Tool(
             name = "use_skill",
@@ -50,9 +82,9 @@ fun createSkillTools(
                         // re-read SOUL/HEARTBEAT/etc from disk every time.
                         val body = runCatching {
                             if (path.isNullOrBlank()) {
-                                skillManager.readSkillBody(skill.name)
+                                backend.readSkillBody(skill.name)
                             } else {
-                                skillManager.readSkillFileCached(skill.name, path)
+                                backend.readSkillFileCached(skill.name, path)
                             }
                         }.getOrNull()
                         if (!body.isNullOrBlank()) {
@@ -83,7 +115,7 @@ fun createSkillTools(
                     } else emptyList()
                     triggerMatched.forEach { skill ->
                         val body = runCatching {
-                            skillManager.readSkillBody(skill.name)
+                            backend.readSkillBody(skill.name)
                         }.getOrNull()
                         if (!body.isNullOrBlank()) {
                             appendLine(body.trim())
@@ -175,18 +207,18 @@ fun createSkillTools(
                 }
                 val path = it.jsonObject["path"]?.jsonPrimitive?.content
                 if (path.isNullOrBlank()) {
-                    val skillMd = skillManager.getSkillDir(name)?.resolve("SKILL.md")
+                    val skillMd = backend.getSkillDir(name)?.resolve("SKILL.md")
                     if (skillMd != null && skillMd.length() > SkillManager.MAX_SKILL_FILE_BYTES) {
                         return@Tool tooLargeErr(skillMd)
                     }
-                    val content = skillManager.readSkillBody(name)
+                    val content = backend.readSkillBody(name)
                         ?: return@Tool err(
                             "skill_body_not_found",
                             "Skill '$name' is enabled but its SKILL.md body could not be read on disk.",
                         )
                     return@Tool listOf(UIMessagePart.Text(content))
                 }
-                val target = skillManager.resolveSkillFile(name, path)
+                val target = backend.resolveSkillFile(name, path)
                     ?: return@Tool err(
                         "path_outside_skill",
                         "Path '$path' resolves outside the '$name' skill directory.",
