@@ -802,7 +802,7 @@ private fun AssistantLocalToolContent(
                         // no-ops since the manifest-declared permission isn't
                         // dangerous-protection there.
                         requiredRuntimePerms = if (Build.VERSION.SDK_INT >= 37) {
-                            listOf(android.Manifest.permission.ACCESS_LOCAL_NETWORK)
+                            listOf("android.permission.ACCESS_LOCAL_NETWORK")
                         } else emptyList(),
                     )
                 }
