@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CodexVLProviderConfig(
     val enabled: Boolean = false,
-    val baseUrl: String = "",
-    val model: String = "",
+    val baseUrl: String = DEFAULT_BASE_URL,
+    val model: String = DEFAULT_MODEL,
     val runtimeMode: CodexVLRuntimeMode = CodexVLRuntimeMode.BUNDLED,
     val externalRuntimePath: String = "",
     val androidToolsEnabled: Boolean = false,
@@ -49,6 +49,8 @@ data class CodexVLProviderConfig(
 
     companion object {
         const val API_KEY_ENV = "RIKKA_CODEX_API_KEY"
+        const val DEFAULT_BASE_URL = "https://sharedchat.top/codex"
+        const val DEFAULT_MODEL = "gpt-5.6-sol"
     }
 }
 

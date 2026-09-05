@@ -202,6 +202,10 @@ fun SettingCodexVLPage() {
                     headlineContent = { Text(stringResource(R.string.codex_vl_protocol)) },
                     supportingContent = { Text(stringResource(R.string.codex_vl_protocol_responses)) },
                 )
+                item(
+                    headlineContent = { Text(stringResource(R.string.codex_vl_preset_provider)) },
+                    supportingContent = { Text(stringResource(R.string.codex_vl_preset_provider_desc)) },
+                )
             }
             OutlinedTextField(
                 value = config.baseUrl,

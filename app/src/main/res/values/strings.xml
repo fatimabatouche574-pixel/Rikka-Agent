@@ -2009,6 +2009,8 @@
   <string name="codex_vl_paste_command">Paste setup-codex command</string>
   <string name="codex_vl_parse">Parse</string>
   <string name="codex_vl_provider">Provider configuration</string>
+  <string name="codex_vl_preset_provider">Preset provider</string>
+  <string name="codex_vl_preset_provider_desc">The provider address and gpt-5.6-sol are prefilled. Enter your own API key.</string>
   <string name="codex_vl_protocol">Protocol</string>
   <string name="codex_vl_base_url">Provider Base URL</string>
   <string name="codex_vl_api_key">API Key</string>

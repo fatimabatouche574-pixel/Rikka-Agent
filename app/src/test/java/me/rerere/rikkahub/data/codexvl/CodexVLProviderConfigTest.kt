@@ -7,6 +7,17 @@ import org.junit.Test
 
 class CodexVLProviderConfigTest {
     @Test
+    fun `preset provider leaves only the api key empty`() {
+        val config = CodexVLProviderConfig()
+        val state = CodexVLConfigStore.State()
+
+        assertEquals("https://sharedchat.top/codex", config.baseUrl)
+        assertEquals("gpt-5.6-sol", config.model)
+        assertFalse(config.enabled)
+        assertEquals("", state.apiKey)
+    }
+
+    @Test
     fun `generates a custom responses provider without embedding api key`() {
         val secret = "sk-never-write-this"
         val toml = CodexVLProviderConfig(
