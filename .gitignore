@@ -37,3 +37,12 @@ app/google-services.json
 
 # Generated baseline profiles (baseline profiling dropped in this fork)
 /app/src/release/generated/
+
+# Local/CI Codex-VL runtime payloads are downloaded from a pinned release and checksum-verified.
+/app/src/main/jniLibs/arm64-v8a/libcodex_vl.so
+/app/src/main/jniLibs/arm64-v8a/libcodex_code_mode_host.so
+/app/src/main/jniLibs/arm64-v8a/libc++_shared.so
+.env
+*.secret
+*.secrets
+/runtime-secrets/

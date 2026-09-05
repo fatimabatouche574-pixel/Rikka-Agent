@@ -103,6 +103,8 @@ android {
         jniLibs {
             useLegacyPackaging = true
             pickFirsts += "lib/*/libtermux.so"
+            keepDebugSymbols += "**/libcodex_vl.so"
+            keepDebugSymbols += "**/libcodex_code_mode_host.so"
         }
     }
     tasks.withType<KotlinCompile>().configureEach {
