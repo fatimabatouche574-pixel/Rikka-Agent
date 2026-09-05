@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import android.view.WindowManager
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +48,15 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SettingCodexVLPage() {
+    val activity = LocalActivity.current
+    DisposableEffect(activity) {
+        val window = activity?.window
+        val wasSecure = window?.attributes?.flags?.and(WindowManager.LayoutParams.FLAG_SECURE) != 0
+        window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        onDispose {
+            if (!wasSecure) window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
     val store: CodexVLConfigStore = koinInject()
     val tester: CodexVLConnectionTester = koinInject()
     val runtime: CodexVLRuntimeManager = koinInject()
@@ -151,6 +163,7 @@ fun SettingCodexVLPage() {
                 value = command,
                 onValueChange = { if (it.length <= CodexVLSetupCommandParser.MAX_INPUT_LENGTH) command = it },
                 label = { Text(stringResource(R.string.codex_vl_paste_command)) },
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
             )
