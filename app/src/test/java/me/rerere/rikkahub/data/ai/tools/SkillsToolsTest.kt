@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.data.ai.tools
 
-import android.test.mock.MockContext
+import android.content.ContextWrapper
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -19,9 +19,9 @@ class SkillsToolsTest {
     val tempFolder = TemporaryFolder()
 
     @Test
-    fun useSkillReadsMetadataDirectoryWhenDisplayNameDiffers() = runBlocking {
+    fun useSkillReadsBodyFromSkillManager() = runBlocking {
         val filesDir = tempFolder.newFolder("files")
-        val skillDir = filesDir.resolve("skills/directory-name").apply { mkdirs() }
+        val skillDir = filesDir.resolve("skills/Display Name").apply { mkdirs() }
         skillDir.resolve("SKILL.md").writeText(
             """
                 ---
@@ -31,7 +31,7 @@ class SkillsToolsTest {
                 Skill instructions
             """.trimIndent()
         )
-        val context = object : MockContext() {
+        val context = object : ContextWrapper(null) {
             override fun getFilesDir(): File = filesDir
         }
         @Suppress("UNCHECKED_CAST")
@@ -46,7 +46,7 @@ class SkillsToolsTest {
                 )
             ),
             skillManager = skillManager,
-        ).single()
+        ).single { it.name == "use_skill" }
 
         val result = tool.execute(
             buildJsonObject {
