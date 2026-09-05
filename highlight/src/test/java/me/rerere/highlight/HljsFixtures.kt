@@ -19,16 +19,16 @@ internal object HljsFixtures {
 
     fun assertLanguageMatches(language: String) {
         val directory = File(root, language)
-        assertTrue("no fixtures for language '\${language}'", directory.isDirectory)
+        assertTrue("no fixtures for language '${language}'", directory.isDirectory)
 
         val sources = directory.listFiles { file -> file.extension == "txt" }
             ?.sortedBy { it.name }
             .orEmpty()
-        assertTrue("no fixtures for language '\${language}'", sources.isNotEmpty())
+        assertTrue("no fixtures for language '${language}'", sources.isNotEmpty())
 
         sources.forEach { source ->
-            val expectedFile = File(directory, "\${source.nameWithoutExtension}.tokens")
-            assertTrue("missing golden tokens for \${source.name}", expectedFile.isFile)
+            val expectedFile = File(directory, "${source.nameWithoutExtension}.tokens")
+            assertTrue("missing golden tokens for ${source.name}", expectedFile.isFile)
 
             val sourceText = source.readText()
             val encoded = expectedFile.readText().trimEnd('\n')
@@ -36,13 +36,13 @@ internal object HljsFixtures {
                 .lineSequence()
                 .map { line ->
                     val separator = line.indexOf('\t')
-                    assertTrue("malformed token line in \${expectedFile.name}: \$line", separator >= 0)
+                    assertTrue("malformed token line in ${expectedFile.name}: \$line", separator >= 0)
                     decodeEscapes(line.substring(separator + 1))
                 }
                 .joinToString(separator = "")
 
             assertEquals(
-                "fixture token stream must preserve source text for \${source.name}",
+                "fixture token stream must preserve source text for ${source.name}",
                 sourceText,
                 decoded,
             )
