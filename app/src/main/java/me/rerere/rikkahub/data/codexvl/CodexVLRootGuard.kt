@@ -18,7 +18,17 @@ object CodexVLRootGuard {
         command: String?,
         executable: String?,
         arguments: Iterable<String>,
-    ): Boolean = listOfNotNull(command, executable).plus(arguments).none(::requiresRootApproval)
+    ): Boolean =
+        command?.let(::requiresRootApproval) != true &&
+            executable?.let(::requiresPrivilegedExecutable) != true &&
+            arguments.none(::requiresRootApproval)
+
+    private fun requiresPrivilegedExecutable(executable: String): Boolean {
+        val dequoted = executable.replace(Regex("[\\\\'\"\\u2018\\u2019\\u201c\\u201d]"), "")
+        return suToken.containsMatchIn(executable) ||
+            suToken.containsMatchIn(dequoted) ||
+            criticalTools.containsMatchIn(executable)
+    }
 
     fun requiresRootApproval(command: String): Boolean {
         val dequoted = command.replace(Regex("[\\\\'\"\\u2018\\u2019\\u201c\\u201d]"), "")
