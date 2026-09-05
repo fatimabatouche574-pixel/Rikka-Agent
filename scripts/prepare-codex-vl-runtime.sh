@@ -5,7 +5,7 @@ set -euo pipefail
 # a user-pasted setup command, and it never executes content from setup-codex.sh.
 readonly CODEX_VERSION="0.153.2-vl.1"
 readonly ARCHIVE_NAME="codex-npm-android-arm64-${CODEX_VERSION}.tgz"
-readonly ARCHIVE_URL="https://github.com/DioNanos/codex-vl/releases/download/rust-v${CODEX_VERSION}/${ARCHIVE_NAME}"
+readonly ARCHIVE_URL="https://github.com/DioNanos/codex-vl/releases/download/v${CODEX_VERSION}/${ARCHIVE_NAME}"
 readonly ARCHIVE_SHA256="8ab7963478044c1001613745e7282d68af4a3007d3734a2e30d7020fbcf8f2a2"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
