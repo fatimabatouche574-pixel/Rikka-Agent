@@ -37,5 +37,25 @@ class CodexVLEventMapperTest {
         assertEquals(CodexVLEventMapper.Risk.CRITICAL, event.risk)
     }
 
+    @Test
+    fun `only successful terminal status is completed`() {
+        for (status in listOf("failed", "interrupted", "inProgress", "unknown")) {
+            val event = CodexVLEventMapper.map(message(
+                """{"method":"turn/completed","params":{"turn":{"status":"$status"}}}"""
+            ))
+            assertTrue(event is CodexVLEventMapper.Event.Failed)
+        }
+        assertEquals(CodexVLEventMapper.Event.Completed, CodexVLEventMapper.map(message(
+            """{"method":"turn/completed","params":{"turn":{"status":"completed"}}}"""
+        )))
+    }
+
+    @Test
+    fun `runtime error does not expose provider controlled text`() {
+        assertEquals(CodexVLEventMapper.Event.Failed("Codex runtime error"), CodexVLEventMapper.map(message(
+            """{"method":"error","params":{"message":"Authorization: Bearer test-secret"}}"""
+        )))
+    }
+
     private fun message(value: String) = Json.parseToJsonElement(value).jsonObject
 }

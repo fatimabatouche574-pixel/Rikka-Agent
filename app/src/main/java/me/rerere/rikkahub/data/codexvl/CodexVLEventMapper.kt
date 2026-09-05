@@ -38,8 +38,13 @@ object CodexVLEventMapper {
             "item/commandExecution/requestApproval" -> permissionEvent(message, params, "shell")
             "item/fileChange/requestApproval" -> permissionEvent(message, params, "file_change")
             "item/started", "item/completed" -> mapItem(params.objectValue("item"))
-            "turn/completed" -> Event.Completed
-            "error" -> Event.Failed(params.string("message") ?: "Codex runtime error")
+            "turn/completed" -> when (params.objectValue("turn")?.string("status")) {
+                "completed" -> Event.Completed
+                "interrupted" -> Event.Failed("Codex turn was interrupted")
+                else -> Event.Failed("Codex turn failed")
+            }
+            // Provider-controlled error text may contain credentials or request bodies.
+            "error" -> Event.Failed("Codex runtime error")
             else -> null
         }
     }

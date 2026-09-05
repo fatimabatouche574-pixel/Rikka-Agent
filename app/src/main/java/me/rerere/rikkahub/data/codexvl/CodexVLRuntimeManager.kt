@@ -171,10 +171,9 @@ class CodexVLRuntimeManager(
             put("cwd", cwd)
             put("approvalPolicy", "on-request")
             if (existing == null) put("ephemeral", false) else put("excludeTurns", true)
-            // thread/resume accepts the same dynamic tool overrides as thread/start.
-            // Re-send the current bridge after a process restart instead of resuming a
-            // thread that can no longer reach Android tools.
-            if (state.provider.androidToolsEnabled && androidTools.isNotEmpty()) {
+            // thread/resume restores tool specs from persisted history; it does not
+            // accept dynamicTools overrides. Calls still use the current local registry.
+            if (existing == null && state.provider.androidToolsEnabled && androidTools.isNotEmpty()) {
                 put("dynamicTools", dynamicToolSpecs())
             }
         }
