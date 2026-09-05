@@ -301,7 +301,33 @@ class CodexVLRuntimeManager(
                 } else if (message["id"] != null && message["method"]?.jsonPrimitive?.contentOrNull == "item/tool/call") {
                     scope.launch(Dispatchers.IO) { handleDynamicToolCall(message) }
                 } else {
-                    CodexVLEventMapper.map(message)?.let(_events::tryEmit)
+                    val method = message["method"]?.jsonPrimitive?.contentOrNull
+                    val command = message["params"]?.let { params ->
+                        runCatching { params.jsonObject["command"]?.jsonPrimitive?.contentOrNull }.getOrNull()
+                    }
+                    val rootBypass = method == "item/commandExecution/requestApproval" &&
+                        command?.let(CodexVLRootGuard::requiresRootApproval) == true
+                    val requestId = message["id"]
+                    if (rootBypass && requestId != null) {
+                        // Ordinary Codex command execution can never become a root channel.
+                        // Reject explicit elevation/critical paths even when Root Access is enabled;
+                        // only android.root_shell may cross that boundary.
+                        sendApprovalFailure(requestId)
+                        _events.tryEmit(
+                            CodexVLEventMapper.Event.Failed(
+                                "Ordinary shell cannot request root access; use android.root_shell",
+                            ),
+                        )
+                    } else {
+                        val mapped = CodexVLEventMapper.map(message)
+                        if (mapped != null) {
+                            _events.tryEmit(mapped)
+                        } else if (requestId != null && method != null) {
+                            // Never leave an unknown server request waiting forever. Fail closed
+                            // without echoing its params, which may contain user/provider data.
+                            sendUnsupportedRequestFailure(requestId)
+                        }
+                    }
                 }
             }
         }
@@ -408,6 +434,23 @@ class CodexVLRuntimeManager(
         runCatching { tool.execute(arguments) }
             .onSuccess { output -> sendDynamicSuccess(requestId, output) }
             .onFailure { sendDynamicFailure(requestId, "Android tool failed") }
+    }
+
+    private fun sendApprovalFailure(requestId: JsonElement) {
+        send(buildJsonObject {
+            put("id", requestId)
+            putJsonObject("result") { put("decision", "decline") }
+        })
+    }
+
+    private fun sendUnsupportedRequestFailure(requestId: JsonElement) {
+        send(buildJsonObject {
+            put("id", requestId)
+            putJsonObject("error") {
+                put("code", -32601)
+                put("message", "Unsupported Codex runtime request")
+            }
+        })
     }
 
     private fun sendDynamicSuccess(requestId: JsonElement, output: List<UIMessagePart>) {
