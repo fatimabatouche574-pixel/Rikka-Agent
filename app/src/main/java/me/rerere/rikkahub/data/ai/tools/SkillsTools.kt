@@ -26,12 +26,12 @@ private class SkillManagerToolBackend(
     private val skillManager: SkillManager,
 ) : SkillToolBackend {
     override fun getContent(skillName: String): SkillContent? = skillManager.getContent(skillName)
-    override fun readSkillBody(skillName: String): String? = backend.readSkillBody(skillName)
+    override fun readSkillBody(skillName: String): String? = skillManager.readSkillBody(skillName)
     override fun readSkillFileCached(skillName: String, relativePath: String): String? =
-        backend.readSkillFileCached(skillName, relativePath)
-    override fun getSkillDir(skillName: String): File? = backend.getSkillDir(skillName)
+        skillManager.readSkillFileCached(skillName, relativePath)
+    override fun getSkillDir(skillName: String): File? = skillManager.getSkillDir(skillName)
     override fun resolveSkillFile(skillName: String, relativePath: String): File? =
-        backend.resolveSkillFile(skillName, relativePath)
+        skillManager.resolveSkillFile(skillName, relativePath)
 }
 
 fun createSkillTools(
