@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SettingCodexVLPage() {
     val activity = LocalActivity.current
+    val context = LocalContext.current
     DisposableEffect(activity) {
         val window = activity?.window
         val wasSecure = window?.attributes?.flags?.and(WindowManager.LayoutParams.FLAG_SECURE) != 0
@@ -117,7 +119,7 @@ fun SettingCodexVLPage() {
                 )
                 item(
                     headlineContent = { Text(stringResource(R.string.codex_vl_runtime_status)) },
-                    supportingContent = { Text(runtimeStatus.label()) },
+                    supportingContent = { Text(runtimeStatus.localizedLabel()) },
                 )
             }
 
@@ -178,13 +180,17 @@ fun SettingCodexVLPage() {
                             apiKey = parsed.value.apiKey
                             command = ""
                             resultText = if (parsed.value.unsupportedOptions.isEmpty()) {
-                                "Responses API · ${parsed.value.baseUrl}"
+                                context.getString(R.string.codex_vl_parse_success, parsed.value.baseUrl)
                             } else {
-                                "${parsed.value.baseUrl} · ${parsed.value.unsupportedOptions.joinToString()}"
+                                context.getString(
+                                    R.string.codex_vl_parse_success_unsupported,
+                                    parsed.value.baseUrl,
+                                    parsed.value.unsupportedOptions.joinToString(),
+                                )
                             }
                         }
                         is CodexVLSetupCommandParser.Result.Failure -> {
-                            resultText = "${parsed.reason}"
+                            resultText = context.getString(parsed.reason.messageResource())
                         }
                     }
                 },
@@ -194,7 +200,7 @@ fun SettingCodexVLPage() {
             CardGroup(title = { Text(stringResource(R.string.codex_vl_provider)) }) {
                 item(
                     headlineContent = { Text(stringResource(R.string.codex_vl_protocol)) },
-                    supportingContent = { Text("Responses API") },
+                    supportingContent = { Text(stringResource(R.string.codex_vl_protocol_responses)) },
                 )
             }
             OutlinedTextField(
@@ -255,8 +261,13 @@ fun SettingCodexVLPage() {
                         testing = true
                         scope.launch {
                             resultText = when (val result = tester.test(config, apiKey)) {
-                                is CodexVLConnectionTester.Result.Success -> "Connected (${result.httpStatus})"
-                                is CodexVLConnectionTester.Result.Failure -> result.error.name.replace('_', ' ')
+                                is CodexVLConnectionTester.Result.Success -> context.getString(
+                                    R.string.codex_vl_connection_success,
+                                    result.httpStatus,
+                                )
+                                is CodexVLConnectionTester.Result.Failure -> context.getString(
+                                    result.error.messageResource(),
+                                )
                             }
                             testing = false
                         }
@@ -268,7 +279,7 @@ fun SettingCodexVLPage() {
                     // settings cannot roll durable session state back.
                     val latestThreads = store.read().conversationThreads
                     store.write(CodexVLConfigStore.State(config, apiKey, latestThreads))
-                    resultText = "Saved"
+                    resultText = context.getString(R.string.codex_vl_saved)
                     if (config.enabled) scope.launch { runtime.restart() }
                     else scope.launch { runtime.stop() }
                 }) { Text(stringResource(R.string.codex_vl_save_enable)) }
@@ -277,11 +288,70 @@ fun SettingCodexVLPage() {
     }
 }
 
-private fun CodexVLRuntimeManager.Status.label(): String = when (this) {
-    CodexVLRuntimeManager.Status.Stopped -> "Stopped"
-    CodexVLRuntimeManager.Status.Starting -> "Starting"
-    is CodexVLRuntimeManager.Status.Running -> "Running · $version"
-    is CodexVLRuntimeManager.Status.Unavailable -> "Unavailable · $reason"
-    is CodexVLRuntimeManager.Status.Crashed -> "Crashed · exit $exitCode"
-    is CodexVLRuntimeManager.Status.Failed -> message
+@Composable
+private fun CodexVLRuntimeManager.Status.localizedLabel(): String = when (this) {
+    CodexVLRuntimeManager.Status.Stopped -> stringResource(R.string.codex_vl_status_stopped)
+    CodexVLRuntimeManager.Status.Starting -> stringResource(R.string.codex_vl_status_starting)
+    is CodexVLRuntimeManager.Status.Running -> stringResource(
+        R.string.codex_vl_status_running,
+        version,
+    )
+    is CodexVLRuntimeManager.Status.Unavailable -> stringResource(
+        R.string.codex_vl_status_unavailable,
+        localizedRuntimeReason(reason),
+    )
+    is CodexVLRuntimeManager.Status.Crashed -> stringResource(
+        R.string.codex_vl_status_crashed,
+        exitCode,
+    )
+    is CodexVLRuntimeManager.Status.Failed -> stringResource(
+        R.string.codex_vl_status_failed,
+        localizedRuntimeReason(message),
+    )
+}
+
+@Composable
+private fun localizedRuntimeReason(reason: String): String = stringResource(
+    when (reason) {
+        "Runtime path is not configured" -> R.string.codex_vl_runtime_reason_path_not_configured
+        "Runtime executable is missing" -> R.string.codex_vl_runtime_reason_missing
+        "Runtime is not executable" -> R.string.codex_vl_runtime_reason_not_executable
+        "Codex-VL is disabled" -> R.string.codex_vl_runtime_reason_disabled
+        "Provider configuration is incomplete" -> R.string.codex_vl_runtime_reason_provider_incomplete
+        "Codex runtime unavailable" -> R.string.codex_vl_runtime_reason_unavailable
+        else -> R.string.codex_vl_runtime_reason_failed
+    },
+)
+
+private fun CodexVLSetupCommandParser.FailureReason.messageResource(): Int = when (this) {
+    CodexVLSetupCommandParser.FailureReason.EMPTY -> R.string.codex_vl_parse_error_empty
+    CodexVLSetupCommandParser.FailureReason.TOO_LONG -> R.string.codex_vl_parse_error_too_long
+    CodexVLSetupCommandParser.FailureReason.SHELL_SYNTAX -> R.string.codex_vl_parse_error_shell_syntax
+    CodexVLSetupCommandParser.FailureReason.INVALID_COMMAND -> R.string.codex_vl_parse_error_invalid_command
+    CodexVLSetupCommandParser.FailureReason.MISSING_URL -> R.string.codex_vl_parse_error_missing_url
+    CodexVLSetupCommandParser.FailureReason.MISSING_KEY -> R.string.codex_vl_parse_error_missing_key
+    CodexVLSetupCommandParser.FailureReason.MISSING_VALUE -> R.string.codex_vl_parse_error_missing_value
+    CodexVLSetupCommandParser.FailureReason.DUPLICATE_OPTION -> R.string.codex_vl_parse_error_duplicate
+    CodexVLSetupCommandParser.FailureReason.INVALID_URL -> R.string.codex_vl_parse_error_invalid_url
+    CodexVLSetupCommandParser.FailureReason.INVALID_KEY -> R.string.codex_vl_parse_error_invalid_key
+    CodexVLSetupCommandParser.FailureReason.INVALID_MODEL -> R.string.codex_vl_parse_error_invalid_model
+}
+
+private fun CodexVLConnectionTester.Error.messageResource(): Int = when (this) {
+    CodexVLConnectionTester.Error.INVALID_URL -> R.string.codex_vl_error_invalid_url
+    CodexVLConnectionTester.Error.MISSING_API_KEY -> R.string.codex_vl_error_missing_api_key
+    CodexVLConnectionTester.Error.AUTHENTICATION_FAILED -> R.string.codex_vl_error_authentication_failed
+    CodexVLConnectionTester.Error.ACCESS_DENIED -> R.string.codex_vl_error_access_denied
+    CodexVLConnectionTester.Error.ENDPOINT_OR_MODEL_NOT_FOUND -> R.string.codex_vl_error_endpoint_or_model_not_found
+    CodexVLConnectionTester.Error.MODEL_UNAVAILABLE -> R.string.codex_vl_error_model_unavailable
+    CodexVLConnectionTester.Error.RATE_LIMITED -> R.string.codex_vl_error_rate_limited
+    CodexVLConnectionTester.Error.PROVIDER_ERROR -> R.string.codex_vl_error_provider
+    CodexVLConnectionTester.Error.TIMEOUT -> R.string.codex_vl_error_timeout
+    CodexVLConnectionTester.Error.DNS_FAILURE -> R.string.codex_vl_error_dns
+    CodexVLConnectionTester.Error.TLS_FAILURE -> R.string.codex_vl_error_tls
+    CodexVLConnectionTester.Error.INVALID_JSON -> R.string.codex_vl_error_invalid_json
+    CodexVLConnectionTester.Error.MALFORMED_STREAM -> R.string.codex_vl_error_malformed_stream
+    CodexVLConnectionTester.Error.BAD_REQUEST -> R.string.codex_vl_error_bad_request
+    CodexVLConnectionTester.Error.HTTP_ERROR -> R.string.codex_vl_error_http
+    CodexVLConnectionTester.Error.NETWORK_FAILURE -> R.string.codex_vl_error_network
 }

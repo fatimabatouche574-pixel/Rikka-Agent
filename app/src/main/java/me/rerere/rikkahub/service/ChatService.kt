@@ -792,9 +792,9 @@ class ChatService(
             .lastOrNull { it.role == MessageRole.USER }
             ?.toText()
             ?.takeIf(String::isNotBlank)
-            ?: throw IllegalArgumentException("Codex-VL requires a text prompt")
+            ?: throw IllegalArgumentException(context.getString(R.string.codex_vl_error_text_prompt_required))
         val runtimeConfig = codexVLRuntimeManager.currentConfig()
-        if (!runtimeConfig.enabled) throw IllegalStateException("Codex-VL is disabled in Settings")
+        if (!runtimeConfig.enabled) throw IllegalStateException(context.getString(R.string.codex_vl_error_disabled))
 
         val response = UIMessage(role = MessageRole.ASSISTANT, parts = emptyList())
         saveConversation(
@@ -829,13 +829,13 @@ class ChatService(
             updateConversation(conversationId, current.updateCurrentMessages(messages))
         }
 
-        codexVLRuntimeManager.runTurn(
+        val codexTurnResult = codexVLRuntimeManager.runTurn(
             conversationId = conversationId.toString(),
             text = userText,
             cwd = initialConversation.workspaceCwd ?: context.filesDir.absolutePath,
         ) { event ->
             when (event) {
-                CodexVLEventMapper.Event.Thinking -> session.processingStatus.value = "Thinking"
+                CodexVLEventMapper.Event.Thinking -> session.processingStatus.value = context.getString(R.string.codex_vl_chat_thinking)
                 is CodexVLEventMapper.Event.ReasoningSummary -> updateResponse { message ->
                     val last = message.parts.lastOrNull()
                     val parts = if (last is UIMessagePart.Reasoning) {
@@ -846,21 +846,24 @@ class ChatService(
                     message.copy(parts = parts)
                 }
                 is CodexVLEventMapper.Event.RunningCommand -> {
-                    session.processingStatus.value = "Running: ${event.command.take(160)}"
+                    session.processingStatus.value = context.getString(R.string.codex_vl_chat_running, event.command.take(160))
                 }
                 is CodexVLEventMapper.Event.EditingFile -> {
-                    session.processingStatus.value = "Editing: ${event.path ?: "file"}"
+                    session.processingStatus.value = context.getString(
+                        R.string.codex_vl_chat_editing,
+                        event.path ?: context.getString(R.string.codex_vl_unknown_file),
+                    )
                 }
                 is CodexVLEventMapper.Event.AndroidTool -> {
-                    session.processingStatus.value = "Android tool: ${event.name}"
+                    session.processingStatus.value = context.getString(R.string.codex_vl_chat_android_tool, event.name)
                 }
                 is CodexVLEventMapper.Event.WaitingForPermission -> {
                     val isRoot = event.risk == CodexVLEventMapper.Risk.CRITICAL
                     val approvalState = if (isRoot && !runtimeConfig.rootAccessEnabled) {
                         codexVLRuntimeManager.resolveApproval(event.requestId, allowOnce = false)
-                        ToolApprovalState.Denied("Root access is disabled")
+                        ToolApprovalState.Denied(context.getString(R.string.codex_vl_root_disabled))
                     } else {
-                        session.processingStatus.value = "Waiting for permission"
+                        session.processingStatus.value = context.getString(R.string.codex_vl_chat_waiting_permission)
                         ToolApprovalState.Pending
                     }
                     val name = when {
@@ -892,10 +895,13 @@ class ChatService(
                     }
                     message.copy(parts = parts)
                 }
-                CodexVLEventMapper.Event.Completed -> session.processingStatus.value = "Completed"
-                is CodexVLEventMapper.Event.Failed -> session.processingStatus.value = "Failed"
+                CodexVLEventMapper.Event.Completed -> session.processingStatus.value = context.getString(R.string.codex_vl_chat_completed)
+                is CodexVLEventMapper.Event.Failed -> session.processingStatus.value = context.getString(R.string.codex_vl_chat_failed)
             }
-        }.getOrThrow()
+        }
+        codexTurnResult.getOrElse {
+            throw IllegalStateException(context.getString(R.string.codex_vl_error_turn_failed))
+        }
 
         session.processingStatus.value = null
         val final = getConversationFlow(conversationId).value.updateCurrentMessages(
