@@ -139,7 +139,7 @@ class CodexVLRuntimeManager(
             notify("initialized")
             _status.value = Status.Running(
                 version = initialized["userAgent"]?.jsonPrimitive?.contentOrNull ?: "Codex-VL",
-                pid = runCatching { started.pid() }.getOrNull(),
+                pid = null,
             )
         }.onFailure { error ->
             stopInternal()
