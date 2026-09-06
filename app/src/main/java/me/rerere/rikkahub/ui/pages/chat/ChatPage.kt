@@ -506,7 +506,7 @@ private fun ChatPageContent(
                 inputState = inputState,
                 setting = setting,
                 conversation = conversation,
-                assistant = assistant,
+                assistant = activeAssistant,
                 vm = vm,
                 onDismiss = { showFilesSheet = false },
             )
