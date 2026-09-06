@@ -68,6 +68,7 @@ class CodexVLRuntimeManager(
     private var stderrJob: Job? = null
     private val writeLock = Any()
     private val turnMutex = Mutex()
+    private val lifecycleMutex = Mutex()
     @Volatile private var androidTools: Map<String, Tool> = emptyMap()
 
     fun configureAndroidTools(tools: List<Tool>) {
@@ -90,7 +91,9 @@ class CodexVLRuntimeManager(
         }
     }
 
-    suspend fun start(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun start(): Result<Unit> = lifecycleMutex.withLock { startInternal() }
+
+    private suspend fun startInternal(): Result<Unit> = withContext(Dispatchers.IO) {
         if (process?.isAlive == true) return@withContext Result.success(Unit)
         val state = store.read()
         val config = state.provider
@@ -115,7 +118,13 @@ class CodexVLRuntimeManager(
                 .directory(context.filesDir)
                 .redirectErrorStream(false)
                 .apply {
-                    environment()["CODEX_HOME"] = codexHome.absolutePath
+                    environment().putAll(CodexVLLaunchEnvironment.values(
+                        context.filesDir.absolutePath,
+                        codexHome.absolutePath,
+                        context.cacheDir.absolutePath,
+                        context.applicationInfo.nativeLibraryDir,
+                        environment()["LD_LIBRARY_PATH"],
+                    ))
                     environment()[CodexVLProviderConfig.API_KEY_ENV] = state.apiKey
                     File(context.applicationInfo.nativeLibraryDir, BUNDLED_CODE_MODE_HOST_NAME)
                         .takeIf(File::isFile)
@@ -152,14 +161,19 @@ class CodexVLRuntimeManager(
         }
     }
 
-    suspend fun stop() = withContext(Dispatchers.IO) {
-        stopInternal()
-        _status.value = Status.Stopped
+    suspend fun stop() = lifecycleMutex.withLock {
+        withContext(Dispatchers.IO) {
+            _status.value = Status.Stopped
+            stopInternal()
+        }
     }
 
-    suspend fun restart(): Result<Unit> {
-        stop()
-        return start()
+    suspend fun restart(): Result<Unit> = lifecycleMutex.withLock {
+        withContext(Dispatchers.IO) {
+            _status.value = Status.Stopped
+            stopInternal()
+            startInternal()
+        }
     }
 
     fun isHealthy(): Boolean = process?.isAlive == true && status.value is Status.Running
@@ -182,7 +196,14 @@ class CodexVLRuntimeManager(
                 put("dynamicTools", dynamicToolSpecs())
             }
         }
-        val result = request(method, params)
+        val result = try {
+            request(method, params)
+        } catch (error: Exception) {
+            throw CodexVLRuntimeFailure(
+                if (existing == null) "THREAD_START" else "THREAD_RESUME",
+                (error as? CodexVLRuntimeFailure)?.category ?: "REQUEST_FAILED",
+            )
+        }
         val threadId = result["thread"]?.jsonObject?.get("id")?.jsonPrimitive?.contentOrNull
             ?: error("Codex app-server returned no thread id")
         if (existing == null) {
@@ -228,7 +249,7 @@ class CodexVLRuntimeManager(
                         when (event) {
                             CodexVLEventMapper.Event.Completed -> terminal.complete(Unit)
                             is CodexVLEventMapper.Event.Failed ->
-                                terminal.completeExceptionally(RuntimeException(event.message))
+                                terminal.completeExceptionally(CodexVLRuntimeFailure("TURN", "FAILED"))
                             else -> Unit
                         }
                     }
@@ -258,20 +279,25 @@ class CodexVLRuntimeManager(
     }
 
     private suspend fun ensureRunning() {
-        if (!isHealthy()) start().getOrThrow()
+        if (!isHealthy()) start().getOrElse { error ->
+            throw (error as? CodexVLRuntimeFailure
+                ?: CodexVLRuntimeFailure("STARTUP", if (error is java.io.IOException) "PROCESS_START" else "UNAVAILABLE"))
+        }
     }
 
     private suspend fun request(method: String, params: JsonObject): JsonObject {
         val id = requestIds.getAndIncrement()
         val deferred = CompletableDeferred<JsonObject>()
         pending[id] = deferred
-        send(buildJsonObject {
-            put("id", id)
-            put("method", method)
-            put("params", params)
-        })
         return try {
+            send(buildJsonObject {
+                put("id", id)
+                put("method", method)
+                put("params", params)
+            })
             withTimeout(REQUEST_TIMEOUT_MS) { deferred.await() }
+        } catch (error: kotlinx.coroutines.TimeoutCancellationException) {
+            throw CodexVLRuntimeFailure(method.replace('/', '_').uppercase(), "TIMEOUT")
         } finally {
             pending.remove(id)
         }
@@ -289,14 +315,15 @@ class CodexVLRuntimeManager(
     }
 
     private fun readStdout(runtime: Process) {
-        BufferedReader(InputStreamReader(runtime.inputStream, Charsets.UTF_8)).useLines { lines ->
+        try {
+            BufferedReader(InputStreamReader(runtime.inputStream, Charsets.UTF_8)).useLines { lines ->
             lines.forEach { line ->
                 val message = runCatching { json.parseToJsonElement(line).jsonObject }.getOrNull() ?: return@forEach
                 val id = message["id"]?.jsonPrimitive?.contentOrNull?.toLongOrNull()
                 if (id != null && ("result" in message || "error" in message)) {
                     val deferred = pending.remove(id) ?: return@forEach
                     val error = message["error"]
-                    if (error != null) deferred.completeExceptionally(RuntimeException("Codex request failed"))
+                    if (error != null) deferred.completeExceptionally(CodexVLRuntimeFailure("RPC", CodexVLRuntimeFailure.classify(error)))
                     else deferred.complete(message["result"]?.jsonObject ?: JsonObject(emptyMap()))
                 } else if (message["id"] != null && message["method"]?.jsonPrimitive?.contentOrNull == "item/tool/call") {
                     scope.launch(Dispatchers.IO) { handleDynamicToolCall(message) }
@@ -331,11 +358,16 @@ class CodexVLRuntimeManager(
                 }
             }
         }
-        if (_status.value is Status.Running || _status.value is Status.Starting) {
-            _status.value = Status.Crashed(runtime.exitValue())
-            pending.values.forEach { it.completeExceptionally(RuntimeException("Codex runtime crashed")) }
+        } catch (_: java.io.IOException) {
+            // Stream closure during stop is expected; never expose raw process output.
+        } finally {
+        if (process === runtime && (_status.value is Status.Running || _status.value is Status.Starting)) {
+            val exitCode = runCatching { runtime.exitValue() }.getOrDefault(-1)
+            _status.value = Status.Crashed(exitCode)
+            pending.values.forEach { it.completeExceptionally(CodexVLRuntimeFailure("RUNTIME", "PROCESS_EXIT")) }
             pending.clear()
             _events.tryEmit(CodexVLEventMapper.Event.Failed("Codex runtime stopped unexpectedly"))
+        }
         }
     }
 
@@ -540,7 +572,8 @@ class CodexVLRuntimeManager(
     }
 
     private fun safeError(error: Throwable): String = when (error) {
-        is java.io.IOException -> "Codex runtime unavailable"
+        is CodexVLRuntimeFailure -> error.message.orEmpty()
+        is java.io.IOException -> "Codex runtime unavailable [PROCESS_START]"
         else -> "Codex runtime failed"
     }
 

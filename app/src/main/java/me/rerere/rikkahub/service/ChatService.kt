@@ -899,8 +899,13 @@ class ChatService(
                 is CodexVLEventMapper.Event.Failed -> session.processingStatus.value = context.getString(R.string.codex_vl_chat_failed)
             }
         }
-        codexTurnResult.getOrElse {
-            throw IllegalStateException(context.getString(R.string.codex_vl_error_turn_failed))
+        codexTurnResult.getOrElse { error ->
+            val diagnostic = (error as? me.rerere.rikkahub.data.codexvl.CodexVLRuntimeFailure)
+                ?.message.orEmpty()
+            throw IllegalStateException(
+                context.getString(R.string.codex_vl_error_turn_failed) +
+                    if (diagnostic.isEmpty()) "" else "\n$diagnostic"
+            )
         }
 
         session.processingStatus.value = null
