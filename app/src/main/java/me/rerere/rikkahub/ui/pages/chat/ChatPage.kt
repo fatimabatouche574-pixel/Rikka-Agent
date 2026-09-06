@@ -64,12 +64,14 @@ import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.data.codexvl.CodexVLChatRouting
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
-import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
+import me.rerere.rikkahub.data.codexvl.CodexVLConfigStore
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.model.AgentRuntime
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.service.ChatError
@@ -281,13 +283,18 @@ private fun ChatPageContent(
     val toaster = LocalToaster.current
     val context = LocalContext.current
     val workspaceRepository: WorkspaceRepository = koinInject()
+    val codexConfigStore: CodexVLConfigStore = koinInject()
+    val codexConfig = remember { codexConfigStore.read().provider }
+    // Conversations persist their assistant id. Do not use the global assistant here:
+    // switching assistants while an old conversation is open must not silently change its
+    // runtime or route a Codex thread through the native chat Provider.
+    val activeAssistant = CodexVLChatRouting.assistantFor(setting, conversation)
     var previewMode by rememberSaveable { mutableStateOf(false) }
     val hazeState = rememberHazeState()
-    val assistant = setting.getCurrentAssistant()
     var showFilesSheet by remember { mutableStateOf(false) }
 
-    val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
-        assistant.workspaceId?.let { workspaceId ->
+    val completionProviders = remember(activeAssistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
+        activeAssistant.workspaceId?.let { workspaceId ->
             listOf(
                 WorkspaceCompletionProvider(
                     workspaceId = workspaceId.toString(),
@@ -310,6 +317,8 @@ private fun ChatPageContent(
                 TopBar(
                     settings = setting,
                     conversation = conversation,
+                    assistant = activeAssistant,
+                    codexModel = codexConfig.model,
                     bigScreen = bigScreen,
                     drawerState = drawerState,
                     previewMode = previewMode,
@@ -329,6 +338,8 @@ private fun ChatPageContent(
                     state = inputState,
                     loading = loadingJob != null,
                     settings = setting,
+                    activeAssistant = activeAssistant,
+                    codexModel = codexConfig.model,
                     hazeState = hazeState,
                     completionProviders = completionProviders,
                     onCancelClick = {
@@ -336,11 +347,10 @@ private fun ChatPageContent(
                     },
                     enableSearch = enableWebSearch,
                     onToggleSearch = {
-                        val current = setting.getCurrentAssistant()
                         vm.updateSettings(
                             setting.copy(
                                 assistants = setting.assistants.map { assistant ->
-                                    if (assistant.id == current.id) {
+                                    if (assistant.id == activeAssistant.id) {
                                         assistant.copy(enableWebSearch = !enableWebSearch)
                                     } else {
                                         assistant
@@ -350,7 +360,7 @@ private fun ChatPageContent(
                         )
                     },
                     onSendClick = {
-                        if (currentChatModel == null) {
+                        if (activeAssistant.agentRuntime != AgentRuntime.CODEX_VL && currentChatModel == null) {
                             toaster.show(
                                 context.getString(R.string.chat_select_model_first),
                                 type = ToastType.Error,
@@ -385,7 +395,7 @@ private fun ChatPageContent(
                         inputState.clearInput()
                     },
                     onUpdateChatModel = {
-                        vm.setChatModel(assistant = setting.getCurrentAssistant(), model = it)
+                        vm.setChatModel(assistant = activeAssistant, model = it)
                     },
                     onUpdateAssistant = {
                         vm.updateSettings(
@@ -713,6 +723,8 @@ private fun ChatFilesPickerSheet(
 private fun TopBar(
     settings: Settings,
     conversation: Conversation,
+    assistant: Assistant,
+    codexModel: String,
     drawerState: DrawerState,
     bigScreen: Boolean,
     previewMode: Boolean,
@@ -752,8 +764,7 @@ private fun TopBar(
                 color = Color.Transparent,
             ) {
                 Column {
-                    val assistant = settings.getCurrentAssistant()
-                    val model = settings.getCurrentChatModel()
+                    val model = settings.findModelById(assistant.chatModelId ?: settings.chatModelId)
                     val provider = model?.findProvider(providers = settings.providers, checkOverwrite = false)
                     Text(
                         text = conversation.title.ifBlank { stringResource(R.string.chat_page_new_chat) },
@@ -761,7 +772,18 @@ private fun TopBar(
                         style = MaterialTheme.typography.bodyMedium,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (model != null && provider != null) {
+                    if (assistant.agentRuntime == AgentRuntime.CODEX_VL) {
+                        Text(
+                            text = stringResource(
+                                R.string.codex_vl_chat_runtime_label,
+                                codexModel.ifBlank { stringResource(R.string.codex_vl_chat_model_not_configured) },
+                            ),
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            color = LocalContentColor.current.copy(0.65f),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        )
+                    } else if (model != null && provider != null) {
                         Text(
                             text = "${assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
                             overflow = TextOverflow.Ellipsis,

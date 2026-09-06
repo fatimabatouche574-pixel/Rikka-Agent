@@ -37,11 +37,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.codexvl.CodexVLConfigStore
+import me.rerere.rikkahub.data.codexvl.CodexVLChatRouting
 import me.rerere.rikkahub.data.codexvl.CodexVLConnectionTester
 import me.rerere.rikkahub.data.codexvl.CodexVLProviderConfig
 import me.rerere.rikkahub.data.codexvl.CodexVLRuntimeManager
 import me.rerere.rikkahub.data.codexvl.CodexVLRuntimeMode
 import me.rerere.rikkahub.data.codexvl.CodexVLSetupCommandParser
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.theme.CustomColors
@@ -60,6 +62,7 @@ fun SettingCodexVLPage() {
         }
     }
     val store: CodexVLConfigStore = koinInject()
+    val settingsStore: SettingsStore = koinInject()
     val tester: CodexVLConnectionTester = koinInject()
     val runtime: CodexVLRuntimeManager = koinInject()
     val initial = remember { store.read() }
@@ -69,6 +72,10 @@ fun SettingCodexVLPage() {
     var resultText by remember { mutableStateOf("") }
     var testing by remember { mutableStateOf(false) }
     var showRootWarning by remember { mutableStateOf(false) }
+    // Connecting a Provider does not by itself change an existing assistant's agent loop.
+    // This explicit opt-in keeps the per-assistant Native/Codex choice, while making the
+    // Save & Enable path usable without a second, easy-to-miss settings screen.
+    var useForCurrentAssistant by remember { mutableStateOf(initial.provider.enabled) }
     val runtimeStatus by runtime.status.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -114,7 +121,21 @@ fun SettingCodexVLPage() {
                     headlineContent = { Text(stringResource(R.string.codex_vl_enable)) },
                     supportingContent = { Text(stringResource(R.string.codex_vl_enable_desc)) },
                     trailingContent = {
-                        Switch(checked = config.enabled, onCheckedChange = { config = config.copy(enabled = it) })
+                        Switch(checked = config.enabled, onCheckedChange = {
+                            config = config.copy(enabled = it)
+                            if (it) useForCurrentAssistant = true
+                        })
+                    },
+                )
+                item(
+                    headlineContent = { Text(stringResource(R.string.codex_vl_use_for_current_assistant)) },
+                    supportingContent = { Text(stringResource(R.string.codex_vl_use_for_current_assistant_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = useForCurrentAssistant,
+                            onCheckedChange = { useForCurrentAssistant = it },
+                            enabled = config.enabled,
+                        )
                     },
                 )
                 item(
@@ -286,9 +307,23 @@ fun SettingCodexVLPage() {
                     // settings cannot roll durable session state back.
                     val latestThreads = store.read().conversationThreads
                     store.write(CodexVLConfigStore.State(config, apiKey, latestThreads))
-                    resultText = context.getString(R.string.codex_vl_saved)
-                    if (config.enabled) scope.launch { runtime.restart() }
-                    else scope.launch { runtime.stop() }
+                    resultText = if (config.enabled && useForCurrentAssistant) {
+                        context.getString(R.string.codex_vl_saved_and_selected)
+                    } else {
+                        context.getString(R.string.codex_vl_saved)
+                    }
+                    scope.launch {
+                        // The Codex config is intentionally separate from the normal Provider
+                        // list. Persist the assistant runtime selector explicitly so
+                        // ChatService routes the next message to Codex-VL instead of the
+                        // disabled/default RikkaHub chat Provider.
+                        if (config.enabled && useForCurrentAssistant) {
+                            settingsStore.update { settings ->
+                                CodexVLChatRouting.selectCurrentAssistant(settings)
+                            }
+                        }
+                        if (config.enabled) runtime.restart() else runtime.stop()
+                    }
                 }) { Text(stringResource(R.string.codex_vl_save_enable)) }
             }
         }

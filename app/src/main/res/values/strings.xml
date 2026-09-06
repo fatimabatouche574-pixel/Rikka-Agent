@@ -2046,6 +2046,9 @@
   <string name="codex_vl_parse_error_invalid_model">The model ID is invalid.</string>
   <string name="codex_vl_connection_success">Connection successful (HTTP %1$d)</string>
   <string name="codex_vl_saved">Saved</string>
+  <string name="codex_vl_saved_and_selected">Saved; Codex-VL is now selected for the current assistant</string>
+  <string name="codex_vl_use_for_current_assistant">Use Codex-VL for current assistant</string>
+  <string name="codex_vl_use_for_current_assistant_desc">When enabled, the current assistant sends chat turns to Codex-VL instead of its normal chat Provider.</string>
   <string name="codex_vl_error_invalid_url">Invalid provider Base URL</string>
   <string name="codex_vl_error_missing_api_key">Enter an API key</string>
   <string name="codex_vl_error_authentication_failed">Authentication failed: invalid API key</string>
@@ -2088,4 +2091,6 @@
   <string name="codex_vl_error_text_prompt_required">Codex-VL requires a text prompt</string>
   <string name="codex_vl_error_disabled">Codex-VL is disabled in Settings</string>
   <string name="codex_vl_error_turn_failed">The Codex-VL task failed. Check runtime status and provider settings.</string>
+  <string name="codex_vl_chat_runtime_label">Codex-VL · %1$s (Responses API)</string>
+  <string name="codex_vl_chat_model_not_configured">Codex-VL model is not configured</string>
 </resources>

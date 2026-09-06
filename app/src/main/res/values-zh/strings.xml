@@ -1937,6 +1937,9 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="codex_vl_parse_error_invalid_model">模型名称无效。</string>
   <string name="codex_vl_connection_success">连接成功（HTTP %1$d）</string>
   <string name="codex_vl_saved">已保存</string>
+  <string name="codex_vl_saved_and_selected">已保存，当前助手已切换到 Codex-VL</string>
+  <string name="codex_vl_use_for_current_assistant">当前助手使用 Codex-VL</string>
+  <string name="codex_vl_use_for_current_assistant_desc">开启后，当前助手的聊天会发送到 Codex-VL，不再走普通 Chat Provider。</string>
   <string name="codex_vl_error_invalid_url">服务商基础地址无效</string>
   <string name="codex_vl_error_missing_api_key">请输入 API 密钥</string>
   <string name="codex_vl_error_authentication_failed">身份验证失败：API 密钥无效</string>
@@ -1979,4 +1982,6 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="codex_vl_error_text_prompt_required">Codex-VL 需要文本消息才能开始任务</string>
   <string name="codex_vl_error_disabled">请先在设置中启用 Codex-VL</string>
   <string name="codex_vl_error_turn_failed">Codex-VL 任务执行失败，请检查运行时状态和服务商配置。</string>
+  <string name="codex_vl_chat_runtime_label">Codex-VL · %1$s（Responses API）</string>
+  <string name="codex_vl_chat_model_not_configured">尚未配置 Codex-VL 模型</string>
 </resources>

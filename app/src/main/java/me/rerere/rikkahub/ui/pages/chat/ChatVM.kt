@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,11 +28,10 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.command.SlashCommandContext
 import me.rerere.rikkahub.data.command.SlashCommandDispatcher
 import me.rerere.rikkahub.data.command.SlashCommandServices
+import me.rerere.rikkahub.data.codexvl.CodexVLChatRouting
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.getAssistantById
-import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
+import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.model.Assistant
@@ -117,8 +117,12 @@ class ChatVM(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     // 当前模型
-    val currentChatModel = settings.map { settings ->
-        settings.getCurrentChatModel()
+    // Resolve the model from this conversation's persisted assistant. The old global-only
+    // lookup could block or label a Codex conversation using whichever assistant happened to
+    // be selected in the drawer, and could also show a stale native model after a switch.
+    val currentChatModel: StateFlow<Model?> = combine(settings, conversation) { settings, currentConversation ->
+        val assistant = CodexVLChatRouting.assistantFor(settings, currentConversation)
+        settings.findModelById(assistant.chatModelId ?: settings.chatModelId)
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // 错误状态
@@ -223,8 +227,7 @@ class ChatVM(
     ): SlashCommandContext {
         val current = conversation.value
         val settings = settingsStore.settingsFlow.value
-        val assistant = settings.getAssistantById(current.assistantId)
-            ?: settings.getCurrentAssistant()
+        val assistant = CodexVLChatRouting.assistantFor(settings, current)
 
         // Refresh skill-contributed commands from this assistant's enabled skills so a newly
         // enabled skill's commands are live immediately (FR-005).
