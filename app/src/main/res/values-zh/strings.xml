@@ -1901,7 +1901,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="codex_vl_parse">解析</string>
   <string name="codex_vl_provider">服务商配置</string>
   <string name="codex_vl_preset_provider">预设服务商</string>
-  <string name="codex_vl_preset_provider_desc">已预填服务商地址和 gpt-5.6-sol；请填写你自己的 API 密钥。</string>
+  <string name="codex_vl_preset_provider_desc">已预填服务商地址和 gpt-5.6-sol；请填写你自己的 API 密钥。ChatGPT 订阅登录不能替代 API 密钥，所选模型必须由该服务商提供。</string>
   <string name="codex_vl_protocol">协议</string>
   <string name="codex_vl_base_url">服务商基础地址</string>
   <string name="codex_vl_api_key">API 密钥</string>
@@ -1953,6 +1953,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="codex_vl_error_bad_request">服务商拒绝了该请求</string>
   <string name="codex_vl_error_http">服务商返回了异常的 HTTP 状态</string>
   <string name="codex_vl_error_network">网络不可用</string>
+  <string name="codex_vl_error_with_status">%1$s（HTTP %2$d）</string>
   <string name="codex_vl_status_stopped">已停止</string>
   <string name="codex_vl_status_starting">正在启动…</string>
   <string name="codex_vl_status_running">运行中 · %1$s</string>

@@ -269,9 +269,12 @@ fun SettingCodexVLPage() {
                                     R.string.codex_vl_connection_success,
                                     result.httpStatus,
                                 )
-                                is CodexVLConnectionTester.Result.Failure -> context.getString(
-                                    result.error.messageResource(),
-                                )
+                                is CodexVLConnectionTester.Result.Failure -> {
+                                    val message = context.getString(result.error.messageResource())
+                                    result.httpStatus?.let {
+                                        context.getString(R.string.codex_vl_error_with_status, message, it)
+                                    } ?: message
+                                }
                             }
                             testing = false
                         }

@@ -37,6 +37,8 @@ data class CodexVLProviderConfig(
             appendLine("env_key = \"$API_KEY_ENV\"")
             appendLine("wire_api = \"responses\"")
             appendLine("requires_openai_auth = false")
+            appendLine("supports_websockets = false")
+            appendLine("http_headers = { \"$ACTOR_AUTHORIZATION_HEADER_NAME\" = \"$ACTOR_AUTHORIZATION_HEADER_VALUE\" }")
         }
     }
 
@@ -51,6 +53,8 @@ data class CodexVLProviderConfig(
         const val API_KEY_ENV = "RIKKA_CODEX_API_KEY"
         const val DEFAULT_BASE_URL = "https://sharedchat.top/codex"
         const val DEFAULT_MODEL = "gpt-5.6-sol"
+        const val ACTOR_AUTHORIZATION_HEADER_NAME = "x-openai-actor-authorization"
+        const val ACTOR_AUTHORIZATION_HEADER_VALUE = "codex-compatible-image-generation"
     }
 }
 

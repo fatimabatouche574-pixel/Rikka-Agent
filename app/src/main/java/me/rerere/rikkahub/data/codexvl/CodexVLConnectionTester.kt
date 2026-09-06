@@ -41,6 +41,10 @@ class CodexVLConnectionTester(
             .url(endpoint)
             .header("Authorization", "Bearer $apiKey")
             .header("Content-Type", "application/json")
+            .header(
+                CodexVLProviderConfig.ACTOR_AUTHORIZATION_HEADER_NAME,
+                CodexVLProviderConfig.ACTOR_AUTHORIZATION_HEADER_VALUE,
+            )
             .post(json.encodeToString(body).toRequestBody(JSON_MEDIA_TYPE))
             .build()
         try {

@@ -29,6 +29,9 @@ class CodexVLProviderConfigTest {
         assertTrue(toml.contains("wire_api = \"responses\""))
         assertTrue(toml.contains("env_key = \"RIKKA_CODEX_API_KEY\""))
         assertTrue(toml.contains("requires_openai_auth = false"))
+        assertTrue(toml.contains("supports_websockets = false"))
+        assertTrue(toml.contains("x-openai-actor-authorization"))
+        assertTrue(toml.contains("codex-compatible-image-generation"))
         assertTrue(toml.contains("model = \"future-model-arbitrary-string\""))
         assertFalse(toml.contains(secret))
     }
